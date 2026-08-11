@@ -1,0 +1,3 @@
+-- Redshift DDL: schemas
+CREATE SCHEMA IF NOT EXISTS core;
+CREATE SCHEMA IF NOT EXISTS mart;
