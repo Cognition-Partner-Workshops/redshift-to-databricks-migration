@@ -51,8 +51,11 @@ def fetch(sql: str):
 
 
 def run_file(path: pathlib.Path):
-    text = path.read_text()
-    for stmt in [s.strip() for s in text.split(";") if s.strip() and not s.strip().startswith("--")]:
+    text = "\n".join(
+        line for line in path.read_text().splitlines()
+        if not line.lstrip().startswith("--")
+    )
+    for stmt in [s.strip() for s in text.split(";") if s.strip()]:
         run_sql(stmt)
 
 
