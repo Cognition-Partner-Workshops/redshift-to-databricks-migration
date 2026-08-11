@@ -17,13 +17,13 @@ during the parallel-run period.
 
 ## Environment
 
-- Redshift Serverless: workgroup `demo-wg`, database `demo`, region `us-west-2`
+- Redshift Serverless: workgroup `demo-wg`, database `demo`, region `us-east-1`
 - Admin user `demoadmin` (password in org secret `REDSHIFT_DEMO_ADMIN_PASSWORD`)
 - AWS access via `AWS_DEMO_ACCESS_KEY_ID` / `AWS_DEMO_SECRET_ACCESS_KEY`
 
 ```bash
 pip install boto3
-export AWS_DEFAULT_REGION=us-west-2
+export AWS_DEFAULT_REGION=us-east-1
 python scripts/seed_redshift.py          # one-time seed
 python scripts/seed_redshift.py --verify # row counts
 python scripts/drift_loader.py           # stage drift before the recon beat
