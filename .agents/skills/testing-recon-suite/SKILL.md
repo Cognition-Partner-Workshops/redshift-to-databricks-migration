@@ -22,5 +22,8 @@ description: How to run the Redshift→Databricks migration recon suite end-to-e
 - AWS_DEMO_ACCESS_KEY_ID, AWS_DEMO_SECRET_ACCESS_KEY
 - REDSHIFT_DEMO_ADMIN_PASSWORD (only for rebuilding Redshift marts)
 
+## Core-table backfill recon
+- `scripts/verify_backfill.py` (merged in PR #15) is a self-contained recon of the three `migration_demo.core` tables vs live Redshift: 8 checks (row counts, SUM/AVG of order totals to the cent, min/max timestamps), prints a markdown table and exits nonzero on any mismatch. Run it from `scripts/` (it imports `dbsql` from the same dir): `cd scripts && python3 verify_backfill.py`. The default `python3` venv on the box already has boto3.
+
 ## Misc
 - The default `python3` on the box may resolve to an unrelated venv; konsole shells may lack boto3 — use the venv python that has boto3 or `pip3 install boto3 redshift_connector`.
