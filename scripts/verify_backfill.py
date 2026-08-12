@@ -7,18 +7,22 @@ queried back-to-back as a single point-in-time snapshot; a mismatch usually
 means new data landed between the backfill and the check — re-run the CTAS.
 
 Env:
-    REDSHIFT_DEMO_ADMIN_PASSWORD (psql as demoadmin against the live endpoint)
+    AWS credentials + AWS_DEFAULT_REGION=us-east-1 (Redshift Data API; the
+    IAM identity's mapped DB user, e.g. "IAM:devin-redshift-demo", needs
+    USAGE on schema core and SELECT on its tables)
     DATABRICKS_DEMO_HOST / DATABRICKS_DEMO_TOKEN
 """
 import os
-import subprocess
 import time
 
+import boto3
 import requests
 
-REDSHIFT_HOST = "demo-wg.599083837640.us-east-1.redshift-serverless.amazonaws.com"
+WORKGROUP = "demo-wg"
 DATABASE = "demo"
 WAREHOUSE_ID = "565cd2fd713738c4"
+
+rs = boto3.client("redshift-data")
 DBX_HOST = os.environ["DATABRICKS_DEMO_HOST"].rstrip("/")
 DBX_HEADERS = {"Authorization": "Bearer " + os.environ["DATABRICKS_DEMO_TOKEN"]}
 
@@ -40,12 +44,19 @@ CHECKS = [
 
 
 def redshift_scalar(sql):
-    env = dict(os.environ, PGPASSWORD=os.environ["REDSHIFT_DEMO_ADMIN_PASSWORD"])
-    out = subprocess.run(
-        ["psql", "-h", REDSHIFT_HOST, "-p", "5439", "-U", "demoadmin",
-         "-d", DATABASE, "-tA", "-c", sql],
-        env=env, capture_output=True, text=True, check=True)
-    return out.stdout.strip()
+    r = rs.execute_statement(WorkgroupName=WORKGROUP, Database=DATABASE, Sql=sql)
+    sid = r["Id"]
+    while True:
+        d = rs.describe_statement(Id=sid)
+        if d["Status"] in ("FINISHED", "FAILED", "ABORTED"):
+            break
+        time.sleep(0.5)
+    if d["Status"] != "FINISHED":
+        raise RuntimeError(d.get("Error"))
+    cell = rs.get_statement_result(Id=sid)["Records"][0][0]
+    if cell.get("isNull"):
+        return ""
+    return str(next(iter(cell.values())))
 
 
 def dbx_scalar(sql):
