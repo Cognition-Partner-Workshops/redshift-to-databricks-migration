@@ -5,9 +5,10 @@
 --   DECODE(...)           -> CASE
 --   CHAR(10) blank-padded status comparison -> rtrim() on the migrated STRING column
 --   DISTSTYLE/SORTKEY     -> not applicable on Delta (dropped)
---   DECIMAL division      -> Redshift truncates the result at the output scale,
---                            while Databricks rounds. floor(x, 4) preserves the
---                            Redshift truncation semantics (all totals >= 0).
+--   DECIMAL division      -> Redshift truncates the result toward zero at the
+--                            output scale, while Databricks rounds.
+--                            sign(x) * floor(abs(x), 4) reproduces the
+--                            toward-zero truncation for any sign.
 
 CREATE OR REPLACE TABLE migration_demo.mart.daily_revenue AS
 SELECT
@@ -17,7 +18,8 @@ SELECT
          ELSE 'RETAIL' END                              AS channel_group,
     COUNT(DISTINCT o.order_id)                          AS order_count,
     CAST(SUM(o.order_total) AS DECIMAL(38,2))           AS gross_revenue,
-    CAST(FLOOR(SUM(o.order_total) / NULLIF(COUNT(DISTINCT o.order_id), 0), 4)
+    CAST(SIGN(SUM(o.order_total) / NULLIF(COUNT(DISTINCT o.order_id), 0))
+         * FLOOR(ABS(SUM(o.order_total) / NULLIF(COUNT(DISTINCT o.order_id), 0)), 4)
          AS DECIMAL(38,4))                              AS avg_order_value
 FROM migration_demo.core.orders o
 JOIN migration_demo.core.customers c ON c.customer_id = o.customer_id
