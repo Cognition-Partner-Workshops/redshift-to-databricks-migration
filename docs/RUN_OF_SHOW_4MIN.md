@@ -7,15 +7,17 @@ finished artifacts.
 
 Fill in the URLs for the current take (the stage playbook outputs them):
 
+Current take: **migration-run-2** (staged 2026-08-12; drift injected, schedule paused)
+
 | # | Artifact | URL |
 |---|---|---|
-| 1 | Redshift query (console QEv2 or DBeaver) | `<fill>` |
+| 1 | Redshift query (console QEv2 or DBeaver) | https://us-east-1.console.aws.amazon.com/sqlworkbench/home?region=us-east-1#/client |
 | 2 | Estate repo (`main`, sql/ tree) | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration |
-| 3 | Session 1 + its PR (assessment/backfill) | `<fill>` / `<fill>` |
-| 4 | Databricks Catalog Explorer (`migration_demo` + `redshift_src`) | `<fill>` |
-| 5 | Session 2 PR — recon FAIL→PASS evidence | `<fill>` |
-| 6 | Recon job (red run staged) | `<fill>` |
-| 7 | Fix session + its PR | `<fill>` / `<fill>` |
+| 3 | Session 1 + its PR (assessment/backfill) | https://partner-workshops.devinenterprise.com/sessions/829675684c9c48bdb3e3ccd2022f0b61 / https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/11 |
+| 4 | Databricks Catalog Explorer (`migration_demo` + `redshift_src`) | https://dbc-8bc9474f-40ae.cloud.databricks.com/explore/data/migration_demo?o=7474651138173478 |
+| 5 | Session 2 PR — recon FAIL→PASS evidence | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/12 |
+| 6 | Recon job (red run staged) | https://dbc-8bc9474f-40ae.cloud.databricks.com/jobs/220238957207364/runs/83886079157947?o=7474651138173478 |
+| 7 | Fix session + its PR | https://partner-workshops.devinenterprise.com/sessions/d3589d432ac7455591062554feffa4bc / https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/13 |
 
 Pre-open all tabs in order. Practice the tab-switch rhythm once — the 4 minutes
 is entirely pacing.
