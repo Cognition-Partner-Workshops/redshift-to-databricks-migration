@@ -3,6 +3,10 @@
 --   DATEDIFF(day, a, b)   -> datediff(b, a)
 --   CHAR(10) blank-padded status comparison -> rtrim() on the migrated STRING column
 --   DISTKEY/SORTKEY       -> not applicable on Delta (dropped)
+--   AVG(DECIMAL)          -> Redshift truncates the result at the argument's
+--                            scale (2), while Databricks rounds. floor(x, 2)
+--                            preserves the Redshift truncation semantics
+--                            (all totals >= 0).
 
 CREATE OR REPLACE TABLE migration_demo.mart.customer_ltv AS
 SELECT
@@ -13,7 +17,7 @@ SELECT
     MAX(o.order_ts)                                     AS last_order_ts,
     COUNT(o.order_id)                                   AS lifetime_orders,
     CAST(SUM(o.order_total) AS DECIMAL(38,2))           AS lifetime_revenue,
-    CAST(AVG(o.order_total) AS DECIMAL(38,2))           AS avg_order_value,
+    CAST(FLOOR(AVG(o.order_total), 2) AS DECIMAL(38,2)) AS avg_order_value,
     DATEDIFF(MAX(o.order_ts), MIN(o.order_ts))          AS active_days
 FROM migration_demo.core.customers c
 JOIN migration_demo.core.orders o ON o.customer_id = c.customer_id
