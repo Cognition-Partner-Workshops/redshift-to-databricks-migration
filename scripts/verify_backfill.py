@@ -31,7 +31,7 @@ CHECKS = [
     # while Databricks rounds, so a raw AVG comparison diverges by a cent even
     # on identical data. SUM/COUNT with FLOOR is engine-neutral.
     ("AVG(order_total) truncated to cent",
-     "SELECT CAST(FLOOR(SUM(order_total) * 100 / COUNT(*)) / 100 AS DECIMAL(20,2)) FROM {p}orders"),
+     "SELECT CAST(FLOOR(SUM(order_total) * 100 / NULLIF(COUNT(*), 0)) / 100 AS DECIMAL(20,2)) FROM {p}orders"),
     ("MIN(order_ts)", "SELECT CAST(MIN(order_ts) AS VARCHAR(32)) FROM {p}orders"),
     ("MAX(order_ts)", "SELECT CAST(MAX(order_ts) AS VARCHAR(32)) FROM {p}orders"),
     ("MIN(customers.created_at)", "SELECT CAST(MIN(created_at) AS VARCHAR(32)) FROM {p}customers"),
@@ -57,7 +57,8 @@ def dbx_scalar(sql):
                          headers=DBX_HEADERS).json()
     if d["status"]["state"] != "SUCCEEDED":
         raise RuntimeError(d["status"])
-    return str(d["result"]["data_array"][0][0])
+    v = d["result"]["data_array"][0][0]
+    return "" if v is None else str(v)
 
 
 def norm(v):
