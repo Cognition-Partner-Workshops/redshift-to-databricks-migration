@@ -1,9 +1,8 @@
--- Core tables. Note the Redshift-isms: DISTKEY/SORTKEY, CHAR blank-padding,
--- IDENTITY columns, GETDATE() defaults.
+-- Core tables.
 
 CREATE TABLE IF NOT EXISTS core.customers (
     customer_id   INTEGER IDENTITY(1,1),
-    customer_code CHAR(12)      NOT NULL,          -- CHAR: blank-padded in Redshift
+    customer_code CHAR(12)      NOT NULL,
     full_name     VARCHAR(120)  NOT NULL,
     email         VARCHAR(160),
     region        CHAR(4)       NOT NULL,          -- e.g. 'WEST', 'EAST'
