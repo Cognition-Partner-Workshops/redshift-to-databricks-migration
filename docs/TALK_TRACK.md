@@ -10,15 +10,21 @@ safer.** ~10–12 min. Record per-beat clips, then stitch.
 |---|---|
 | Redshift (query editor v2 or DBeaver/CLI) | https://us-east-1.console.aws.amazon.com/sqlworkbench/home?region=us-east-1 |
 | Estate repo | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration |
-| Session 1 (assessment + backfill) | _fill in after recording_ |
-| PR (assessment/backfill) | _fill in_ |
-| Databricks Catalog Explorer (`migration_demo`) | _fill in workspace URL_ |
-| Session 2 (SQL conversion + recon) | _fill in_ |
-| PR (converted ETL + recon PASS) | _fill in_ |
-| Databricks recon job | _fill in_ |
+| Session 1 (assessment + backfill) | https://partner-workshops.devinenterprise.com/sessions/018d5d819ffc4e0fb7afaa94e2682a40 |
+| PR (assessment/backfill) | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/5 |
+| Databricks Catalog Explorer (`migration_demo`) | https://dbc-8bc9474f-40ae.cloud.databricks.com/explore/data/migration_demo |
+| Session 2 (SQL conversion + recon) | https://partner-workshops.devinenterprise.com/sessions/13e4e77e60d649b6a888a4bac079bbf8 |
+| PR (converted ETL + recon PASS) | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/8 |
+| Databricks recon job | https://dbc-8bc9474f-40ae.cloud.databricks.com/jobs/220238957207364 |
 | Devin automations page | https://partner-workshops.devinenterprise.com/automations |
-| Fix session (webhook-triggered) | _fill in_ |
-| PR (drift fix) | _fill in_ |
+| Fix session (webhook-triggered) | https://partner-workshops.devinenterprise.com/sessions/2d1f9982f8d14aa1bcfce20b96a07b68 |
+| PR (drift fix) | https://github.com/Cognition-Partner-Workshops/redshift-to-databricks-migration/pull/9 |
+
+Notes: sessions PR into run branches (`migration-run-N`), never `main` — `main` stays
+pre-migration (tag `baseline`). The operator kit (this doc, prompts, seed/drift
+scripts, recon job assets) lives only on `demo-ops`. The recon job runs nightly
+06:00 UTC; its failure task POSTs to the Devin automation
+"Redshift migration recon failure — auto-remediate".
 
 ---
 
