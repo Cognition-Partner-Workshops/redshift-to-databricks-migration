@@ -1,5 +1,4 @@
 -- Nightly ETL: rebuild mart.daily_revenue from core.orders.
--- Redshift-isms: GETDATE(), DATEADD, TRUNC(timestamp) -> date, DECODE().
 
 DROP TABLE IF EXISTS mart.daily_revenue;
 
