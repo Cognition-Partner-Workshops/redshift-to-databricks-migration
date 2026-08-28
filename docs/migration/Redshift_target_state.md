@@ -2,8 +2,9 @@
 
 Engagement: Redshift Serverless → Databricks migration, repo
 `Cognition-Partner-Workshops/redshift-to-databricks-migration`.
-Every field is marked **FACT** (cited) or **PROPOSED** (default awaiting STOP A
-confirmation). Surfaces not present in this estate are marked **N/A** with a reason.
+Every field is marked **FACT** (cited) or **PROPOSED**. All PROPOSED fields were
+confirmed as proposed at STOP A (2026-08-28). Surfaces not present in this estate
+are marked **N/A** with a reason.
 
 Sources:
 - S1 — Reference implementation: converted Databricks ETL/reports on prior run branches
@@ -104,5 +105,5 @@ Sources:
 6. New warehouses, hardcoded credentials, or hardcoded workspace hosts.
 
 ## Open questions (queued for STOP A)
-- Confirm PROPOSED fields above (CI gate wording, no-clustering, no-masking, decommission scope).
-- Whether the Databricks Workflows job for the nightly ETL (replacing `sp_refresh_marts`) should be created in this run or deferred.
+- ~~Confirm PROPOSED fields above~~ — CONFIRMED at STOP A (2026-08-28): all approved as proposed.
+- ~~Workflows job timing~~ — CONFIRMED at STOP A: deferred to the sp_refresh_marts migration wave.
