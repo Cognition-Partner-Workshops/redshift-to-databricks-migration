@@ -1,0 +1,26 @@
+# Nightly mart refresh: Databricks Job replacing the Redshift stored procedure
+# sql/etl/12_sp_refresh_marts.sql (mart.sp_refresh_marts). Deploy with Databricks Asset
+# Bundles (`databricks bundle deploy`); the tasks run the mart builders in dependency order
+# on the existing SQL warehouse, and a task failure fails the run (no downstream task runs).
+resources:
+  jobs:
+    refresh_marts:
+      name: mart-refresh-nightly
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      max_concurrent_runs: 1
+      tasks:
+        - task_key: build_daily_revenue
+          sql_task:
+            warehouse_id: 565cd2fd713738c4
+            file:
+              path: ../etl/10_build_daily_revenue.sql
+        - task_key: build_customer_ltv
+          depends_on:
+            - task_key: build_daily_revenue
+          sql_task:
+            warehouse_id: 565cd2fd713738c4
+            file:
+              path: ../etl/11_build_customer_ltv.sql
