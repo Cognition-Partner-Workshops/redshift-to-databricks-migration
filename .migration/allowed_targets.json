@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "generated": "2026-09-03",
+  "run_branch": "migration-run-9",
+  "description": "Allow-list of write targets for run-9. Children may write only to the namespaces listed under their unit in the wave manifest; every such namespace must be a sub-namespace of one of these. Everything else (legacy Redshift, other UC catalogs, main branch) is read-only.",
+  "unity_catalog": {
+    "catalog": "migration_demo",
+    "schemas": ["core", "mart", "default"],
+    "warehouse_id": "565cd2fd713738c4",
+    "read_only_catalogs": ["redshift_src"]
+  },
+  "repo": {
+    "writable_paths": ["databricks/", "scripts/", "docs/migration/"],
+    "orchestrator_only_paths": [".migration/"],
+    "read_only_paths": ["sql/"],
+    "pr_base": "migration-run-9",
+    "forbidden_pr_base": ["main"]
+  },
+  "legacy": {
+    "redshift_workgroup": "demo-wg",
+    "database": "demo",
+    "mode": "read-only",
+    "admin_exception": "demoadmin mart rebuild only per .agents/skills/testing-recon-suite/SKILL.md, never from a child"
+  }
+}
