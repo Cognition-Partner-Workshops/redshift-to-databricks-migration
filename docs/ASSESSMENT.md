@@ -1,0 +1,124 @@
+# Redshift → Databricks Migration Assessment
+
+Scope: every SQL asset under `sql/` (3 DDL/ETL/report groups, 7 files, 5 tables,
+1 procedure, 2 reports). Source: Redshift Serverless `demo-wg`/`demo` (us-east-1).
+Target: Unity Catalog `migration_demo` (`core`, `mart`), Lakehouse Federation
+catalog `redshift_src` over connection `redshift_demo`.
+
+## Risk summary
+
+| Rank | Asset | Risk | Why it is hard to migrate faithfully |
+|---|---|---|---|
+| 1 | `sql/etl/10_build_daily_revenue.sql` | **High** | `order_status <> 'CANCELLED  '` relies on Redshift CHAR blank-padded comparison; a literal port keeps all 63,597 rows instead of dropping 10,190 cancelled orders (verified, see below). Also `TRUNC(ts)`, `DECODE`, `GETDATE()`, `DISTSTYLE ALL`. |
+| 2 | `sql/etl/11_build_customer_ltv.sql` | **High** | Same CHAR filter bug; `AVG(DECIMAL)` result scale differs; `DATEDIFF(day, a, b)` argument order/semantics differ (Redshift counts day boundaries, Databricks `datediff(end, start)`). |
+| 3 | `sql/etl/12_sp_refresh_marts.sql` | **Medium** | plpgsql procedure (`RAISE INFO`, `$$` body). No 1:1 target; becomes a Databricks Job / SQL script. Body references `mart.daily_revenue_stage`, which no ETL step creates — orchestration is implicit (numeric file order) and must be made explicit. |
+| 4 | `sql/ddl/02_core_tables.sql` | **Medium** | `IDENTITY(1,1)` → `GENERATED ALWAYS AS IDENTITY` (gap/ordering semantics differ, and backfilled ids must be preserved, not regenerated). `CHAR(n)` → `STRING` loses padding semantics. `DISTKEY`/`SORTKEY` → liquid clustering. `SMALLINT`, `DECIMAL(5,4)` map cleanly. |
+| 5 | `sql/reports/21_channel_trend.sql` | **Medium** | `DATEADD(day, -30, TRUNC(GETDATE()))` → `date_add(current_date(), -30)`; result depends on session timezone (Redshift `GETDATE()` is UTC, Databricks warehouse timezone must be pinned to UTC for parity). |
+| 6 | `sql/reports/20_region_topline.sql` | **Low** | Pure ANSI aggregates. Only risk is inherited: `AVG(avg_order_value)` rounding differs if upstream mart scale differs. |
+| 7 | `sql/ddl/01_schemas.sql` | **Low** | Trivial `CREATE SCHEMA`. |
+
+## Detailed findings
+
+### 1. CHAR blank-padding comparison (`10_`, `11_`) — data-correctness risk
+`order_status` is `CHAR(10)`. Redshift ignores trailing blanks when comparing CHAR
+values, so `'CANCELLED '` (stored, 10 chars) `<> 'CANCELLED  '` (literal, 11 chars) is
+FALSE and cancelled orders are correctly excluded. Federation and CTAS preserve the
+padded 10-char value as `STRING`; Databricks compares strings byte-wise. Measured on
+`migration_demo.core.orders`:
+
+| Expression (Databricks) | Rows |
+|---|---|
+| `order_status = 'CANCELLED  '` (literal as written, 11 chars) | 0 |
+| `order_status = 'CANCELLED'` (unpadded) | 0 |
+| `order_status = 'CANCELLED '` (padded to 10) | 10,190 |
+| `order_status <> 'CANCELLED  '` (literal port keeps) | 63,597 of 63,597 |
+
+Conversion rule: normalise on both sides — `TRIM(order_status) <> 'CANCELLED'` — and
+apply the same `TRIM` to `region`, `customer_code`, `sku` wherever they are compared or
+joined. Recon must compare `TRIM`med strings.
+
+### 2. Numeric semantics (`10_`, `11_`, `20_`)
+- `SUM(order_total) / NULLIF(COUNT(DISTINCT order_id),0)`: DECIMAL(12,2)/BIGINT.
+  Redshift yields DECIMAL with its own scale rules; Databricks yields DECIMAL(…, 6+).
+  Cast explicitly (`CAST(... AS DECIMAL(12,2))`) or agree a rounding rule in the
+  recon tolerance record.
+- `AVG(order_total)` on DECIMAL(12,2): Redshift returns scale 2 semantics
+  (truncation on some paths), Databricks returns DECIMAL(16,6). Same fix.
+- `COUNT(o.order_id)` vs `COUNT(DISTINCT o.order_id)`: unchanged, but note 2,830
+  orders have no `order_items` rows (max `order_items.order_id` = 60,767 vs 63,597
+  orders) — not a migration defect, but any future item-level mart must not assume
+  1:N coverage.
+
+### 3. Date/time functions
+| Redshift | Databricks |
+|---|---|
+| `TRUNC(o.order_ts)` (→ DATE) | `CAST(o.order_ts AS DATE)` |
+| `TRUNC(GETDATE())` | `current_date()` |
+| `GETDATE()` | `current_timestamp()` |
+| `DATEDIFF(day, a, b)` | `datediff(b, a)` — argument order reversed; both count calendar-day boundaries |
+| `DATEADD(day, -30, x)` | `date_add(x, -30)` |
+| `DECODE(x, 'web','ONLINE','app','ONLINE','RETAIL')` | `CASE x WHEN 'web' THEN 'ONLINE' WHEN 'app' THEN 'ONLINE' ELSE 'RETAIL' END` |
+
+Timestamps are timezone-naive in Redshift; the SQL warehouse must run with
+`timezone = UTC` so `current_date()` cut-offs match `TRUNC(GETDATE())`.
+
+### 4. Physical design
+`DISTSTYLE`/`DISTKEY`/`SORTKEY` have no Databricks equivalent and must be dropped
+from DDL. Target: `CLUSTER BY (order_ts, customer_id)` on `orders`,
+`CLUSTER BY (order_id)` on `order_items`, `CLUSTER BY (signup_date)` on `customers`;
+marts are small (`DISTSTYLE ALL` implies broadcast-size) and need no clustering.
+`IDENTITY` columns: keep backfilled ids as plain `BIGINT`/`INT` until cutover, then
+convert to `GENERATED BY DEFAULT AS IDENTITY` with a start value above the source max.
+
+### 5. Procedure and orchestration (`12_`)
+`mart.sp_refresh_marts` is a thin plpgsql wrapper; the actual rebuild order is
+implicit in file numbering (`10_` then `11_`) run by an external scheduler. Target:
+one Databricks Job with two sequential SQL tasks (daily_revenue → customer_ltv),
+`RAISE INFO` replaced by job run logs. `DROP TABLE IF EXISTS mart.daily_revenue_stage`
+references a table nothing creates; drop the statement.
+`DROP + CTAS` full refresh maps to `CREATE OR REPLACE TABLE ... AS SELECT` (atomic in
+Delta, unlike the Redshift two-step which leaves a window with no table).
+
+## Backfill: `core` tables via federation
+
+Method: single-shot `CREATE OR REPLACE TABLE migration_demo.core.<t> AS SELECT * FROM
+redshift_src.core.<t>` (all three tables are below the size threshold; `orders` is
+append-only, so the copy watermark is `MAX(loaded_at)` = `2026-09-02 05:02:50`).
+
+Type mapping observed through federation: `CHAR(n)`/`VARCHAR(n)` → `STRING`,
+`INTEGER` → `INT`, `BIGINT` → `BIGINT`, `SMALLINT` → `SMALLINT`, `DECIMAL(p,s)`
+preserved, `DATE`/`TIMESTAMP`/`BOOLEAN` preserved.
+
+### Verification (live Redshift vs `migration_demo.core`)
+
+| Table | Check | Redshift | Databricks | Match |
+|---|---|---|---|---|
+| core.customers | row_count | 2000 | 2000 | yes |
+| core.customers | distinct customer_id | 2000 | 2000 | yes |
+| core.customers | active_customers | 2000 | 2000 | yes |
+| core.customers | distinct regions | 4 | 4 | yes |
+| core.customers | min/max signup_date | 2025-08-11 / 2026-07-12 | 2025-08-11 / 2026-07-12 | yes |
+| core.customers | min/max created_at | 2026-08-11 20:44:41 / 2026-08-11 20:44:51 | same | yes |
+| core.orders | row_count | 63597 | 63597 | yes |
+| core.orders | distinct order_id | 63597 | 63597 | yes |
+| core.orders | sum(order_total) | 56734168.36 | 56734168.36 | yes |
+| core.orders | cancelled (TRIM compare) | 10190 | 10190 | yes |
+| core.orders | min/max order_ts | 2025-08-11 00:08:28 / 2026-09-02 04:58:49 | same | yes |
+| core.orders | min/max loaded_at | 2026-08-11 20:44:55 / 2026-09-02 05:02:50 | same | yes |
+| core.order_items | row_count | 151803 | 151803 | yes |
+| core.order_items | distinct order_item_id | 151803 | 151803 | yes |
+| core.order_items | sum(quantity) | 455959 | 455959 | yes |
+| core.order_items | sum(unit_price) | 19239795.00 | 19239795.00 | yes |
+| core.order_items | sum(qty*price*(1-discount)) | 56022828.352500 | 56022828.352500 | yes |
+| core.order_items | min/max order_id | 1 / 60767 | 1 / 60767 | yes |
+
+All 23 checks match; no discrepancies. Because `core.orders` receives continuous
+inserts, any later recon must either re-snapshot or filter both sides to
+`loaded_at <= '2026-09-02 05:02:50'`. Re-run with `python scripts/verify_backfill.py`.
+
+## Next steps
+1. Convert `10_`/`11_` to Databricks SQL with the `TRIM` and explicit-cast rules
+   above; build `migration_demo.mart.*`; report-parity check against Redshift marts.
+2. Replace `sp_refresh_marts` with a two-task Databricks Job.
+3. Convert reports `20_`/`21_`; pin warehouse timezone to UTC.
+4. Incremental catch-up plan for `core.orders` / `core.order_items` from the watermark.
