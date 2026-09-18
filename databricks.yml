@@ -1,0 +1,12 @@
+bundle:
+  name: redshift-migration
+
+include:
+  - databricks/jobs/*.job.yml
+
+targets:
+  dev:
+    mode: development
+    default: true
+  prod:
+    mode: production
