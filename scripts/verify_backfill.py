@@ -6,6 +6,7 @@ Usage: python scripts/verify_backfill.py   (exit 1 on any mismatch)
 """
 import json
 import os
+import re
 import sys
 import time
 
@@ -68,8 +69,7 @@ def redshift(sql):
 
 def databricks(sql):
     host = os.environ["DATABRICKS_DEMO_HOST"].rstrip("/")
-    if not host.startswith("http"):
-        host = "https://" + host
+    host = "https://" + re.sub(r"^https?://", "", host)
     hdr = {"Authorization": f"Bearer {os.environ['DATABRICKS_DEMO_TOKEN']}"}
     r = requests.post(
         f"{host}/api/2.0/sql/statements",
