@@ -1,0 +1,360 @@
+=== PRELOAD DESCRIBE (before type reconciliation) ===
+col_name	data_type	comment
+order_id	bigint	
+customer_id	int	
+order_ts	timestamp	
+order_status	string	
+order_total	decimal(12,2)	
+sales_channel	string	
+attrs	map<string,string>	
+order_date	date	
+# Partition Information		
+# col_name	data_type	comment
+order_date	date	
+---
+col_name	data_type	comment
+order_item_id	bigint	
+order_id	bigint	
+sku	string	
+quantity	smallint	
+unit_price	decimal(10,2)	
+discount_pct	decimal(5,4)	
+---
+col_name	data_type	comment
+customer_id	int	
+customer_code	string	
+full_name	string	
+email	string	
+region	string	
+signup_date	date	
+is_active	boolean	
+created_at	timestamp	
+---
+col_name	data_type	comment
+customer_id	int	
+tag	string	
+---
+
+=== TYPE DECISION ===
+Existing core.orders order_ts=timestamp differs from DDL TIMESTAMP_NTZ.
+Existing ops.customers customer_code/region=string and created_at=timestamp differ from DDL CHAR/TIMESTAMP_NTZ.
+Dropping all four core/ops tables as requested before recreating the exact DDL.
+
+=== DROP mismatched core/ops tables ===
+COMMAND: python3 ~/dbx_sql.py DROP TABLE IF EXISTS trino_migration_demo.core.orders; DROP TABLE IF EXISTS trino_migration_demo.core.order_items; DROP TABLE IF EXISTS trino_migration_demo.ops.customers; DROP TABLE IF EXISTS trino_migration_demo.ops.customer_tags
+---
+---
+---
+---
+RC: 0
+
+=== databricks/ddl/01_schemas.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/ddl/01_schemas.sql
+---
+---
+---
+---
+---
+---
+RC: 0
+
+=== databricks/ddl/02_core_tables.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/ddl/02_core_tables.sql
+---
+---
+---
+---
+RC: 0
+
+=== databricks/load/01_load_trino_snapshot.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/load/01_load_trino_snapshot.sql
+{
+  "state": "FAILED",
+  "error": {
+    "error_code": "BAD_REQUEST",
+    "message": "[DELTA_FEATURES_REQUIRE_MANUAL_ENABLEMENT] Your table schema requires manually enablement of the following table feature(s): timestampNtz.\n\nTo do this, run the following command for each of features listed above:\n  ALTER TABLE table_name SET TBLPROPERTIES ('delta.feature.feature_name' = 'supported')\nReplace \"table_name\" and \"feature_name\" with real values.\n\nCurrent supported feature(s): appendOnly, deletionVectors, invariants."
+  },
+  "sql_state": "42000"
+}
+RC: 1
+STOPPED after databricks/load/01_load_trino_snapshot.sql (rc=1)
+
+=== RESUME databricks/ddl/02_core_tables.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/ddl/02_core_tables.sql
+---
+---
+---
+---
+RC: 0
+
+=== RESUME ALTER timestampNtz feature on core.orders and ops.customers ===
+COMMAND: python3 ~/dbx_sql.py ALTER TABLE trino_migration_demo.core.orders SET TBLPROPERTIES ('delta.feature.timestampNtz'='supported'); ALTER TABLE trino_migration_demo.ops.customers SET TBLPROPERTIES ('delta.feature.timestampNtz'='supported')
+---
+---
+RC: 0
+
+=== RESUME databricks/load/01_load_trino_snapshot.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/load/01_load_trino_snapshot.sql
+num_affected_rows	num_inserted_rows
+---
+num_affected_rows	num_inserted_rows
+---
+num_affected_rows	num_inserted_rows
+---
+num_affected_rows	num_inserted_rows
+---
+num_affected_rows	num_inserted_rows
+---
+num_affected_rows	num_inserted_rows
+---
+RC: 0
+
+=== RESUME databricks/load/02_backfill_core.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/load/02_backfill_core.sql
+num_affected_rows	num_inserted_rows
+5000	5000
+---
+num_affected_rows	num_inserted_rows
+12000	12000
+---
+num_affected_rows	num_inserted_rows
+200	200
+---
+num_affected_rows	num_inserted_rows
+401	401
+---
+RC: 0
+
+=== RESUME databricks/etl/10_build_daily_revenue.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/etl/10_build_daily_revenue.sql
+{
+  "state": "FAILED",
+  "error": {
+    "error_code": "BAD_REQUEST",
+    "message": "\n[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 3, pos 91)\n\n== SQL ==\n-- Converted from trino/sql/etl/10_build_daily_revenue.sql\n-- approx_distinct(order_id) -> COUNT(DISTINCT order_id): order_id is unique, the exact count is\n-- what the sketch estimates. Trino's DECIMAL(38,2) / BIGINT yields DECIMAL(38,6) (half-up)\n-------------------------------------------------------------------------------------------^^^\n"
+  },
+  "sql_state": "42601"
+}
+RC: 1
+STOPPED after RESUME databricks/etl/10_build_daily_revenue.sql (rc=1)
+
+=== RESUME2 databricks/etl/10_build_daily_revenue.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/etl/10_build_daily_revenue.sql
+num_affected_rows	num_inserted_rows
+---
+RC: 0
+
+=== RESUME2 databricks/etl/11_build_customer_ltv.sql ===
+COMMAND: python3 ~/dbx_sql.py databricks/etl/11_build_customer_ltv.sql
+num_affected_rows	num_inserted_rows
+---
+RC: 0
+
+=== STEP4 recon_01 ===
+COMMAND: python3 ~/dbx_sql.py recon/trino/01_row_counts.sql
+object	trino_rows	dbx_rows	diff	verdict
+lake.core.order_items	12000	12000	0	PASS
+lake.core.orders	5000	5000	0	PASS
+lake.mart.customer_ltv	150	150	0	PASS
+lake.mart.daily_revenue	360	360	0	PASS
+ops.public.customer_tags	401	401	0	PASS
+ops.public.customers	200	200	0	PASS
+---
+RC: 0
+
+=== STEP4 recon_02 ===
+COMMAND: python3 ~/dbx_sql.py recon/trino/02_aggregates.sql
+object	metric	trino_v	dbx_v	verdict
+core.order_items	discount_pct_sum	14.4000	14.4000	PASS
+core.order_items	order_id_sum	27006000	27006000	PASS
+core.order_items	order_item_id_sum	72006000	72006000	PASS
+core.order_items	quantity_sum	30000	30000	PASS
+core.order_items	sku	-4846665493896993752	-4846665493896993752	PASS
+core.order_items	unit_price_sum	1542640.00	1542640.00	PASS
+core.orders	attrs	-7344112369743299931	-7344112369743299931	PASS
+core.orders	customer_id_sum	502500	502500	PASS
+core.orders	order_date_max	2026-09-21	2026-09-21	PASS
+core.orders	order_date_min	2026-05-24	2026-05-24	PASS
+core.orders	order_id	12502500	12502500	PASS
+core.orders	order_status	-4117606417621460759	-4117606417621460759	PASS
+core.orders	order_total_sum	1750325.00	1750325.00	PASS
+core.orders	order_ts_max	2026-09-21 15:05:41.437	2026-09-21 15:05:41.437	PASS
+core.orders	order_ts_min	2026-05-24 15:42:41.437	2026-05-24 15:42:41.437	PASS
+core.orders	sales_channel	4947973784003604705	4947973784003604705	PASS
+mart.customer_ltv	active_days_sum	17312	17312	PASS
+mart.customer_ltv	avg_order_value_sum	52506.50	52506.50	PASS
+mart.customer_ltv	customer_code	162296370922522955	162296370922522955	PASS
+mart.customer_ltv	customer_id_sum	15050	15050	PASS
+mart.customer_ltv	first_order_month	-6897190952955916888	-6897190952955916888	PASS
+mart.customer_ltv	first_order_ts_min	2026-05-24 15:42:41.437	2026-05-24 15:42:41.437	PASS
+mart.customer_ltv	last_order_ts_max	2026-09-21 14:55:41.437	2026-09-21 14:55:41.437	PASS
+mart.customer_ltv	lifetime_orders_sum	3750	3750	PASS
+mart.customer_ltv	lifetime_revenue_sum	1312662.50	1312662.50	PASS
+mart.customer_ltv	region	-5940836715064716764	-5940836715064716764	PASS
+mart.customer_ltv	tags	-5516732151000841085	-5516732151000841085	PASS
+mart.daily_revenue	avg_order_value_sum	126676.083447	126676.083447	PASS
+mart.daily_revenue	gross_revenue_sum	1300747.17	1300747.17	PASS
+mart.daily_revenue	order_count_sum	3713	3713	PASS
+mart.daily_revenue	order_date_max	2026-09-20 00:00:00	2026-09-20 00:00:00	PASS
+mart.daily_revenue	order_date_min	2026-05-24 00:00:00	2026-05-24 00:00:00	PASS
+mart.daily_revenue	promo_group	-2721518921417107955	-2721518921417107955	PASS
+mart.daily_revenue	region	3980515984604246342	3980515984604246342	PASS
+ops.customer_tags	customer_id_sum	40334	40334	PASS
+ops.customer_tags	tag	-4956603714476504172	-4956603714476504172	PASS
+ops.customers	created_at_max	2020-01-09 16:00:00	2020-01-09 16:00:00	PASS
+ops.customers	created_at_min	2020-01-01 09:00:00	2020-01-01 09:00:00	PASS
+ops.customers	customer_code	-4047121002204018509	-4047121002204018509	PASS
+ops.customers	customer_id_sum	20100	20100	PASS
+ops.customers	email	3750877113577052716	3750877113577052716	PASS
+ops.customers	full_name	1894192683690595412	1894192683690595412	PASS
+ops.customers	is_active_true	180	180	PASS
+ops.customers	region	-920946799154232590	-920946799154232590	PASS
+ops.customers	signup_date_max	2023-04-14	2023-04-14	PASS
+ops.customers	signup_date_min	2020-01-11	2020-01-11	PASS
+---
+RC: 0
+
+=== STEP4 recon_03 ===
+COMMAND: python3 ~/dbx_sql.py recon/trino/03_row_diffs.sql
+object	trino_only	dbx_only
+mart.daily_revenue	0	0
+mart.customer_ltv	0	0
+---
+RC: 0
+
+=== STEP5/6 db_report_20 ===
+COMMAND: python3 ~/dbx_sql.py databricks/reports/20_region_topline.sql
+region	customers	revenue	aov	tag_count
+SOUT	50	437825.00	350.26	101
+EAST	50	437500.00	350.00	100
+WEST	50	437337.50	349.87	101
+---
+RC: 0
+
+=== STEP5/6 db_report_21 ===
+COMMAND: python3 ~/dbx_sql.py databricks/reports/21_channel_trend.sql
+order_date	promo_group	revenue	orders
+2026-08-22T00:00:00.000Z	ORGANIC	1776.20	10
+2026-08-22T00:00:00.000Z	PROMOTIONAL	3371.01	19
+2026-08-23T00:00:00.000Z	ORGANIC	1724.20	10
+2026-08-23T00:00:00.000Z	PROMOTIONAL	3277.28	19
+2026-08-24T00:00:00.000Z	ORGANIC	1507.32	9
+2026-08-24T00:00:00.000Z	PROMOTIONAL	3348.30	20
+2026-08-25T00:00:00.000Z	ORGANIC	1625.40	10
+2026-08-25T00:00:00.000Z	PROMOTIONAL	3084.49	19
+2026-08-26T00:00:00.000Z	ORGANIC	1573.40	10
+2026-08-26T00:00:00.000Z	PROMOTIONAL	2990.76	19
+2026-08-27T00:00:00.000Z	ORGANIC	1521.40	10
+2026-08-27T00:00:00.000Z	PROMOTIONAL	3046.70	20
+2026-08-28T00:00:00.000Z	ORGANIC	1324.80	9
+2026-08-28T00:00:00.000Z	PROMOTIONAL	2942.70	20
+2026-08-29T00:00:00.000Z	ORGANIC	1422.60	10
+2026-08-29T00:00:00.000Z	PROMOTIONAL	2699.17	19
+2026-08-30T00:00:00.000Z	ORGANIC	1370.60	10
+2026-08-30T00:00:00.000Z	PROMOTIONAL	2605.44	19
+2026-08-31T00:00:00.000Z	ORGANIC	1318.60	10
+2026-08-31T00:00:00.000Z	PROMOTIONAL	2641.10	20
+2026-09-01T00:00:00.000Z	ORGANIC	1142.28	9
+2026-09-01T00:00:00.000Z	PROMOTIONAL	2537.10	20
+2026-09-02T00:00:00.000Z	ORGANIC	1219.80	10
+2026-09-02T00:00:00.000Z	PROMOTIONAL	2313.85	19
+2026-09-03T00:00:00.000Z	ORGANIC	1167.80	10
+2026-09-03T00:00:00.000Z	PROMOTIONAL	2220.12	19
+2026-09-04T00:00:00.000Z	ORGANIC	1115.80	10
+2026-09-04T00:00:00.000Z	PROMOTIONAL	2235.50	20
+2026-09-05T00:00:00.000Z	ORGANIC	959.76	9
+2026-09-05T00:00:00.000Z	PROMOTIONAL	2131.50	20
+2026-09-06T00:00:00.000Z	ORGANIC	1017.00	10
+2026-09-06T00:00:00.000Z	PROMOTIONAL	1829.43	18
+2026-09-07T00:00:00.000Z	ORGANIC	965.00	10
+2026-09-07T00:00:00.000Z	PROMOTIONAL	1933.90	20
+2026-09-08T00:00:00.000Z	ORGANIC	824.04	9
+2026-09-08T00:00:00.000Z	PROMOTIONAL	1829.90	20
+2026-09-09T00:00:00.000Z	ORGANIC	866.20	10
+2026-09-09T00:00:00.000Z	PROMOTIONAL	1642.01	19
+2026-09-10T00:00:00.000Z	ORGANIC	814.20	10
+2026-09-10T00:00:00.000Z	PROMOTIONAL	1548.28	19
+2026-09-11T00:00:00.000Z	ORGANIC	762.20	10
+2026-09-11T00:00:00.000Z	PROMOTIONAL	1528.30	20
+2026-09-12T00:00:00.000Z	ORGANIC	641.52	9
+2026-09-12T00:00:00.000Z	PROMOTIONAL	1424.30	20
+2026-09-13T00:00:00.000Z	ORGANIC	6719.68	19
+2026-09-13T00:00:00.000Z	PROMOTIONAL	12022.37	35
+2026-09-14T00:00:00.000Z	ORGANIC	6625.56	19
+2026-09-14T00:00:00.000Z	PROMOTIONAL	14526.46	39
+2026-09-15T00:00:00.000Z	ORGANIC	7192.40	20
+2026-09-15T00:00:00.000Z	PROMOTIONAL	13060.93	38
+2026-09-16T00:00:00.000Z	ORGANIC	7040.00	19
+2026-09-16T00:00:00.000Z	PROMOTIONAL	14184.60	40
+2026-09-17T00:00:00.000Z	ORGANIC	6339.04	19
+2026-09-17T00:00:00.000Z	PROMOTIONAL	13933.27	39
+2026-09-18T00:00:00.000Z	ORGANIC	6890.80	20
+2026-09-18T00:00:00.000Z	PROMOTIONAL	13090.05	38
+2026-09-19T00:00:00.000Z	ORGANIC	6753.48	19
+2026-09-19T00:00:00.000Z	PROMOTIONAL	12935.78	39
+2026-09-20T00:00:00.000Z	ORGANIC	6688.00	20
+2026-09-20T00:00:00.000Z	PROMOTIONAL	13345.15	39
+---
+RC: 0
+
+=== STEP5/6 db_report_22 ===
+COMMAND: python3 ~/dbx_sql.py databricks/reports/22_promo_lift.sql
+promo	orders	median_order_total	average_order_total
+NONE	1250	350.00	350.26
+LOYALTY5	1250	349.87	350.13
+SPRING15	1250	349.74	350.00
+WELCOME10	1250	349.61	349.87
+---
+RC: 0
+
+=== STEP5/6 final_describes_and_type_checks ===
+COMMAND: python3 ~/dbx_sql.py /dev/stdin
+col_name	data_type	comment
+order_date	timestamp	
+region	char(4)	
+promo_group	string	
+order_count	bigint	
+gross_revenue	decimal(38,2)	
+avg_order_value	decimal(38,6)	
+---
+col_name	data_type	comment
+customer_id	int	
+customer_code	char(12)	
+region	string	
+first_order_ts	timestamp_ntz	
+last_order_ts	timestamp_ntz	
+lifetime_orders	bigint	
+lifetime_revenue	decimal(38,2)	
+avg_order_value	decimal(12,2)	
+active_days	bigint	
+first_order_month	string	
+tags	array<string>	
+---
+length(region)	count(1)
+4	200
+---
+typeof(attrs)	count(1)
+map<string,string>	5000
+---
+RC: 0
+
+=== STEP5/6 db_report_22_rerun ===
+COMMAND: python3 ~/dbx_sql.py databricks/reports/22_promo_lift.sql
+{
+  "state": "FAILED",
+  "error": {
+    "error_code": "BAD_REQUEST",
+    "message": "\n[PARSE_SYNTAX_ERROR] Syntax error at or near end of input. SQLSTATE: 42601 (line 4, pos 56)\n\n== SQL ==\n-- Converted from trino/sql/reports/22_promo_lift.sql\n-- Trino coerces DECIMAL(12,2) to REAL for approx_percentile and estimates the median with a\n-- t-digest, whose output varies between runs on identical data. Databricks percentile_approx\n-- uses a different sketch and returns an observed value\n--------------------------------------------------------^^^\n"
+  },
+  "sql_state": "42601"
+}
+RC: 1
+
+=== STEP5/6 db_report_22_rerun_wrapper ===
+COMMAND: python3 - <<'PY' (dbx_sql.run on unsplit databricks/reports/22_promo_lift.sql)
+promo	orders	median_order_total	average_order_total
+NONE	1250	350.0	350.26
+LOYALTY5	1250	349.87	350.13
+SPRING15	1250	349.74	350.00
+WELCOME10	1250	349.61	349.87
+RC: 0

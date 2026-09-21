@@ -1,0 +1,8 @@
+object	trino_rows	dbx_rows	diff	verdict
+lake.core.order_items	12000	12000	0	PASS
+lake.core.orders	5000	5000	0	PASS
+lake.mart.customer_ltv	150	150	0	PASS
+lake.mart.daily_revenue	360	360	0	PASS
+ops.public.customer_tags	401	401	0	PASS
+ops.public.customers	200	200	0	PASS
+---

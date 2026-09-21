@@ -1,0 +1,12 @@
+===== lake.core.orders =====
+"5000"
+===== lake.core.order_items =====
+"12000"
+===== ops.public.customers =====
+"200"
+===== ops.public.customer_tags =====
+"401"
+===== lake.mart.daily_revenue =====
+"360"
+===== lake.mart.customer_ltv =====
+"150"

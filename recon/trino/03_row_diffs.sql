@@ -1,49 +1,38 @@
--- Row-level symmetric diffs. Every count must be 0.
--- daily_revenue key: (order_date, region, promo_group)
-WITH t AS (
-  SELECT CAST(order_date AS DATE) order_date, region, promo_group, order_count,
-         CAST(gross_revenue AS DECIMAL(18,2)) gross_revenue,
-         CAST(avg_order_value AS DECIMAL(18,2)) avg_order_value
-  FROM trino_migration_demo.trino_src.mart_daily_revenue
-), d AS (
-  SELECT CAST(order_date AS DATE) order_date, region, promo_group, order_count,
-         CAST(gross_revenue AS DECIMAL(18,2)) gross_revenue,
-         CAST(avg_order_value AS DECIMAL(18,2)) avg_order_value
-  FROM trino_migration_demo.mart.daily_revenue
+-- Symmetric row-level diffs for the two rebuilt marts (the four landed tables are byte copies of
+-- trino_src and are covered by 01/02). Rows are canonicalised to strings so MAP/ARRAY compare.
+-- Every *_only count must be 0.
+WITH dr_t AS (
+    SELECT CAST(order_date AS STRING) AS order_date, concat('[', region, ']') AS region, promo_group,
+           order_count, CAST(gross_revenue AS STRING) AS gross_revenue,
+           CAST(avg_order_value AS STRING) AS avg_order_value
+    FROM trino_migration_demo.trino_src.mart_daily_revenue
+),
+dr_d AS (
+    SELECT CAST(order_date AS STRING) AS order_date, concat('[', region, ']') AS region, promo_group,
+           order_count, CAST(gross_revenue AS STRING) AS gross_revenue,
+           CAST(avg_order_value AS STRING) AS avg_order_value
+    FROM trino_migration_demo.mart.daily_revenue
+),
+ltv_t AS (
+    SELECT customer_id, concat('[', customer_code, ']') AS customer_code, concat('[', region, ']') AS region,
+           CAST(first_order_ts AS STRING) AS first_order_ts, CAST(last_order_ts AS STRING) AS last_order_ts,
+           lifetime_orders, CAST(lifetime_revenue AS STRING) AS lifetime_revenue,
+           CAST(avg_order_value AS STRING) AS avg_order_value, active_days, first_order_month,
+           to_json(tags) AS tags
+    FROM trino_migration_demo.trino_src.mart_customer_ltv
+),
+ltv_d AS (
+    SELECT customer_id, concat('[', customer_code, ']') AS customer_code, concat('[', region, ']') AS region,
+           CAST(first_order_ts AS STRING) AS first_order_ts, CAST(last_order_ts AS STRING) AS last_order_ts,
+           lifetime_orders, CAST(lifetime_revenue AS STRING) AS lifetime_revenue,
+           CAST(avg_order_value AS STRING) AS avg_order_value, active_days, first_order_month,
+           to_json(tags) AS tags
+    FROM trino_migration_demo.mart.customer_ltv
 )
-SELECT 'daily_revenue trino-minus-dbx' AS diff, COUNT(*) AS rows_ FROM (SELECT * FROM t EXCEPT SELECT * FROM d)
+SELECT 'mart.daily_revenue' AS object,
+       (SELECT count(*) FROM (SELECT * FROM dr_t EXCEPT ALL SELECT * FROM dr_d)) AS trino_only,
+       (SELECT count(*) FROM (SELECT * FROM dr_d EXCEPT ALL SELECT * FROM dr_t)) AS dbx_only
 UNION ALL
-SELECT 'daily_revenue dbx-minus-trino', COUNT(*) FROM (SELECT * FROM d EXCEPT SELECT * FROM t)
-UNION ALL
-SELECT 'daily_revenue aov mismatch (raw, unrounded)', COUNT(*)
-FROM trino_migration_demo.trino_src.mart_daily_revenue a
-JOIN trino_migration_demo.mart.daily_revenue b
-  ON CAST(a.order_date AS DATE) = CAST(b.order_date AS DATE) AND a.region = b.region AND a.promo_group = b.promo_group
-WHERE a.avg_order_value <> b.avg_order_value
-UNION ALL
-SELECT 'customer_ltv trino-minus-dbx', COUNT(*) FROM (
-  SELECT customer_id, customer_code, region, first_order_ts, last_order_ts, lifetime_orders,
-         CAST(lifetime_revenue AS DECIMAL(18,2)), CAST(avg_order_value AS DECIMAL(18,2)),
-         active_days, first_order_month, tags
-  FROM trino_migration_demo.trino_src.mart_customer_ltv
-  EXCEPT
-  SELECT customer_id, customer_code, region, first_order_ts, last_order_ts, lifetime_orders,
-         CAST(lifetime_revenue AS DECIMAL(18,2)), CAST(avg_order_value AS DECIMAL(18,2)),
-         active_days, first_order_month, tags
-  FROM trino_migration_demo.mart.customer_ltv)
-UNION ALL
-SELECT 'customer_ltv dbx-minus-trino', COUNT(*) FROM (
-  SELECT customer_id, customer_code, region, first_order_ts, last_order_ts, lifetime_orders,
-         CAST(lifetime_revenue AS DECIMAL(18,2)), CAST(avg_order_value AS DECIMAL(18,2)),
-         active_days, first_order_month, tags
-  FROM trino_migration_demo.mart.customer_ltv
-  EXCEPT
-  SELECT customer_id, customer_code, region, first_order_ts, last_order_ts, lifetime_orders,
-         CAST(lifetime_revenue AS DECIMAL(18,2)), CAST(avg_order_value AS DECIMAL(18,2)),
-         active_days, first_order_month, tags
-  FROM trino_migration_demo.trino_src.mart_customer_ltv)
-UNION ALL
-SELECT 'customer_ltv aov mismatch (raw, unrounded)', COUNT(*)
-FROM trino_migration_demo.trino_src.mart_customer_ltv a
-JOIN trino_migration_demo.mart.customer_ltv b ON a.customer_id = b.customer_id
-WHERE a.avg_order_value <> b.avg_order_value
+SELECT 'mart.customer_ltv',
+       (SELECT count(*) FROM (SELECT * FROM ltv_t EXCEPT ALL SELECT * FROM ltv_d)),
+       (SELECT count(*) FROM (SELECT * FROM ltv_d EXCEPT ALL SELECT * FROM ltv_t));

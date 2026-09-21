@@ -1,0 +1,35 @@
+col_name	data_type	comment
+order_id	bigint	
+customer_id	int	
+order_ts	timestamp	
+order_status	string	
+order_total	decimal(12,2)	
+sales_channel	string	
+attrs	map<string,string>	
+order_date	date	
+# Partition Information		
+# col_name	data_type	comment
+order_date	date	
+---
+col_name	data_type	comment
+order_item_id	bigint	
+order_id	bigint	
+sku	string	
+quantity	smallint	
+unit_price	decimal(10,2)	
+discount_pct	decimal(5,4)	
+---
+col_name	data_type	comment
+customer_id	int	
+customer_code	string	
+full_name	string	
+email	string	
+region	string	
+signup_date	date	
+is_active	boolean	
+created_at	timestamp	
+---
+col_name	data_type	comment
+customer_id	int	
+tag	string	
+---

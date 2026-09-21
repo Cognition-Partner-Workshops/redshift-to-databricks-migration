@@ -1,0 +1,15 @@
+---
+---
+num_affected_rows	num_inserted_rows
+1	1
+---
+col_name	data_type	comment
+r	char(4)	
+c	char(12)	
+t	timestamp_ntz	
+m	map<string,string>	
+---
+length(r)	length(c)	typeof(t)	typeof(m)
+4	12	timestamp_ntz	map<string,string>
+---
+---

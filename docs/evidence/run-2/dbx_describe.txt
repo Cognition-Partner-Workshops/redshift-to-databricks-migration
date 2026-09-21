@@ -1,0 +1,27 @@
+col_name	data_type	comment
+order_date	timestamp	
+region	char(4)	
+promo_group	string	
+order_count	bigint	
+gross_revenue	decimal(38,2)	
+avg_order_value	decimal(38,6)	
+---
+col_name	data_type	comment
+customer_id	int	
+customer_code	char(12)	
+region	string	
+first_order_ts	timestamp_ntz	
+last_order_ts	timestamp_ntz	
+lifetime_orders	bigint	
+lifetime_revenue	decimal(38,2)	
+avg_order_value	decimal(12,2)	
+active_days	bigint	
+first_order_month	string	
+tags	array<string>	
+---
+length(region)	count(1)
+4	200
+---
+typeof(attrs)	count(1)
+map<string,string>	5000
+---

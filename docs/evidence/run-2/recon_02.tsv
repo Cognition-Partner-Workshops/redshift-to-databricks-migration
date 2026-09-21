@@ -1,0 +1,48 @@
+object	metric	trino_v	dbx_v	verdict
+core.order_items	discount_pct_sum	14.4000	14.4000	PASS
+core.order_items	order_id_sum	27006000	27006000	PASS
+core.order_items	order_item_id_sum	72006000	72006000	PASS
+core.order_items	quantity_sum	30000	30000	PASS
+core.order_items	sku	-4846665493896993752	-4846665493896993752	PASS
+core.order_items	unit_price_sum	1542640.00	1542640.00	PASS
+core.orders	attrs	-7344112369743299931	-7344112369743299931	PASS
+core.orders	customer_id_sum	502500	502500	PASS
+core.orders	order_date_max	2026-09-21	2026-09-21	PASS
+core.orders	order_date_min	2026-05-24	2026-05-24	PASS
+core.orders	order_id	12502500	12502500	PASS
+core.orders	order_status	-4117606417621460759	-4117606417621460759	PASS
+core.orders	order_total_sum	1750325.00	1750325.00	PASS
+core.orders	order_ts_max	2026-09-21 15:05:41.437	2026-09-21 15:05:41.437	PASS
+core.orders	order_ts_min	2026-05-24 15:42:41.437	2026-05-24 15:42:41.437	PASS
+core.orders	sales_channel	4947973784003604705	4947973784003604705	PASS
+mart.customer_ltv	active_days_sum	17312	17312	PASS
+mart.customer_ltv	avg_order_value_sum	52506.50	52506.50	PASS
+mart.customer_ltv	customer_code	162296370922522955	162296370922522955	PASS
+mart.customer_ltv	customer_id_sum	15050	15050	PASS
+mart.customer_ltv	first_order_month	-6897190952955916888	-6897190952955916888	PASS
+mart.customer_ltv	first_order_ts_min	2026-05-24 15:42:41.437	2026-05-24 15:42:41.437	PASS
+mart.customer_ltv	last_order_ts_max	2026-09-21 14:55:41.437	2026-09-21 14:55:41.437	PASS
+mart.customer_ltv	lifetime_orders_sum	3750	3750	PASS
+mart.customer_ltv	lifetime_revenue_sum	1312662.50	1312662.50	PASS
+mart.customer_ltv	region	-5940836715064716764	-5940836715064716764	PASS
+mart.customer_ltv	tags	-5516732151000841085	-5516732151000841085	PASS
+mart.daily_revenue	avg_order_value_sum	126676.083447	126676.083447	PASS
+mart.daily_revenue	gross_revenue_sum	1300747.17	1300747.17	PASS
+mart.daily_revenue	order_count_sum	3713	3713	PASS
+mart.daily_revenue	order_date_max	2026-09-20 00:00:00	2026-09-20 00:00:00	PASS
+mart.daily_revenue	order_date_min	2026-05-24 00:00:00	2026-05-24 00:00:00	PASS
+mart.daily_revenue	promo_group	-2721518921417107955	-2721518921417107955	PASS
+mart.daily_revenue	region	3980515984604246342	3980515984604246342	PASS
+ops.customer_tags	customer_id_sum	40334	40334	PASS
+ops.customer_tags	tag	-4956603714476504172	-4956603714476504172	PASS
+ops.customers	created_at_max	2020-01-09 16:00:00	2020-01-09 16:00:00	PASS
+ops.customers	created_at_min	2020-01-01 09:00:00	2020-01-01 09:00:00	PASS
+ops.customers	customer_code	-4047121002204018509	-4047121002204018509	PASS
+ops.customers	customer_id_sum	20100	20100	PASS
+ops.customers	email	3750877113577052716	3750877113577052716	PASS
+ops.customers	full_name	1894192683690595412	1894192683690595412	PASS
+ops.customers	is_active_true	180	180	PASS
+ops.customers	region	-920946799154232590	-920946799154232590	PASS
+ops.customers	signup_date_max	2023-04-14	2023-04-14	PASS
+ops.customers	signup_date_min	2020-01-11	2020-01-11	PASS
+---

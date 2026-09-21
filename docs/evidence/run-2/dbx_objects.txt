@@ -1,0 +1,74 @@
+database	volume_name
+---
+database	tableName	isTemporary
+core	order_items	false
+core	orders	false
+---
+database	volume_name
+---
+database	tableName	isTemporary
+---
+database	volume_name
+---
+database	tableName	isTemporary
+information_schema	abac_policy_definitions	false
+information_schema	catalog_privileges	false
+information_schema	catalog_tags	false
+information_schema	catalogs	false
+information_schema	check_constraints	false
+information_schema	column_masks	false
+information_schema	column_tags	false
+information_schema	columns	false
+information_schema	constraint_column_usage	false
+information_schema	constraint_table_usage	false
+information_schema	information_schema_catalog_name	false
+information_schema	key_column_usage	false
+information_schema	parameters	false
+information_schema	referential_constraints	false
+information_schema	routine_columns	false
+information_schema	routine_privileges	false
+information_schema	routines	false
+information_schema	row_filters	false
+information_schema	schema_privileges	false
+information_schema	schema_tags	false
+information_schema	schemata	false
+information_schema	table_constraints	false
+information_schema	table_privileges	false
+information_schema	table_tags	false
+information_schema	tables	false
+information_schema	views	false
+information_schema	volume_privileges	false
+information_schema	volume_tags	false
+information_schema	volumes	false
+---
+database	volume_name
+landing	files
+---
+database	tableName	isTemporary
+---
+database	volume_name
+---
+database	tableName	isTemporary
+mart	customer_ltv	false
+mart	daily_revenue	false
+---
+database	volume_name
+---
+database	tableName	isTemporary
+ops	customer_tags	false
+ops	customers	false
+---
+database	volume_name
+trino_src	landing
+---
+database	tableName	isTemporary
+trino_src	core_order_items	false
+trino_src	core_orders	false
+trino_src	mart_customer_ltv	false
+trino_src	mart_daily_revenue	false
+trino_src	ops_customer_tags	false
+trino_src	ops_customers	false
+trino_src	report_20	false
+trino_src	report_21	false
+trino_src	report_22	false
+---

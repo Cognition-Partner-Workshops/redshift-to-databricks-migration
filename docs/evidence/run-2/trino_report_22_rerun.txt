@@ -1,0 +1,13 @@
+# Second execution of report 22 approx_percentile on the SAME unchanged data, plus exact median. Shows Trino's t-digest estimate is non-deterministic run to run and returns REAL.
+"attr_value","t","ap"
+"LOYALTY5","real","350.3639"
+"NONE","real","351.729"
+"SPRING15","real","351.57254"
+"WELCOME10","real","350.64438"
+
+# Exact median (window-function, no sketch)
+"promo","exact_median"
+"LOYALTY5","350.13"
+"NONE","350.26"
+"SPRING15","350.00"
+"WELCOME10","349.87"

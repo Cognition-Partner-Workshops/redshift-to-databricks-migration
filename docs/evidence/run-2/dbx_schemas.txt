@@ -1,0 +1,9 @@
+databaseName
+core
+default
+information_schema
+landing
+mart
+ops
+trino_src
+---

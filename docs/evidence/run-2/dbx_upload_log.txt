@@ -1,0 +1,6 @@
+core_orders.csv PUT 204
+core_order_items.csv PUT 204
+ops_customers.csv PUT 204
+ops_customer_tags.csv PUT 204
+mart_daily_revenue.csv PUT 204
+mart_customer_ltv.csv PUT 204

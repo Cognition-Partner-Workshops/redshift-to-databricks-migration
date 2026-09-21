@@ -1,0 +1,136 @@
+
+===== DESCRIBE lake.core.orders =====
+"order_id","bigint","",""
+"customer_id","integer","",""
+"order_ts","timestamp(3)","",""
+"order_status","varchar","",""
+"order_total","decimal(12,2)","",""
+"sales_channel","varchar","",""
+"attrs","map(varchar, varchar)","",""
+"order_date","date","partition key",""
+
+===== SHOW CREATE TABLE lake.core.orders =====
+"CREATE TABLE lake.core.orders (
+   order_id bigint,
+   customer_id integer,
+   order_ts timestamp(3),
+   order_status varchar,
+   order_total decimal(12, 2),
+   sales_channel varchar,
+   attrs map(varchar, varchar),
+   order_date date
+)
+WITH (
+   format = 'PARQUET',
+   partitioned_by = ARRAY['order_date']
+)"
+
+===== DESCRIBE lake.core.order_items =====
+"order_item_id","bigint","",""
+"order_id","bigint","",""
+"sku","varchar","",""
+"quantity","smallint","",""
+"unit_price","decimal(10,2)","",""
+"discount_pct","decimal(5,4)","",""
+
+===== SHOW CREATE TABLE lake.core.order_items =====
+"CREATE TABLE lake.core.order_items (
+   order_item_id bigint,
+   order_id bigint,
+   sku varchar,
+   quantity smallint,
+   unit_price decimal(10, 2),
+   discount_pct decimal(5, 4)
+)
+WITH (
+   format = 'PARQUET'
+)"
+
+===== DESCRIBE ops.public.customers =====
+"customer_id","integer","",""
+"customer_code","char(12)","",""
+"full_name","varchar(120)","",""
+"email","varchar(160)","",""
+"region","char(4)","",""
+"signup_date","date","",""
+"is_active","boolean","",""
+"created_at","timestamp(6)","",""
+
+===== SHOW CREATE TABLE ops.public.customers =====
+"CREATE TABLE ops.public.customers (
+   customer_id integer NOT NULL,
+   customer_code char(12) NOT NULL,
+   full_name varchar(120) NOT NULL,
+   email varchar(160) NOT NULL,
+   region char(4) NOT NULL,
+   signup_date date NOT NULL,
+   is_active boolean NOT NULL,
+   created_at timestamp(6) NOT NULL
+)"
+
+===== DESCRIBE ops.public.customer_tags =====
+"customer_id","integer","",""
+"tag","varchar","",""
+
+===== SHOW CREATE TABLE ops.public.customer_tags =====
+"CREATE TABLE ops.public.customer_tags (
+   customer_id integer NOT NULL,
+   tag varchar NOT NULL
+)"
+
+===== DESCRIBE lake.mart.daily_revenue =====
+"order_date","timestamp(3)","",""
+"region","char(4)","",""
+"promo_group","varchar(11)","",""
+"order_count","bigint","",""
+"gross_revenue","decimal(38,2)","",""
+"avg_order_value","decimal(38,6)","",""
+
+===== SHOW CREATE TABLE lake.mart.daily_revenue =====
+"CREATE TABLE lake.mart.daily_revenue (
+   order_date timestamp(3),
+   region char(4),
+   promo_group varchar(11),
+   order_count bigint,
+   gross_revenue decimal(38, 2),
+   avg_order_value decimal(38, 6)
+)
+WITH (
+   external_location = 'file:///data/warehouse/mart/daily_revenue',
+   format = 'PARQUET'
+)"
+
+===== DESCRIBE lake.mart.customer_ltv =====
+"customer_id","integer","",""
+"customer_code","char(12)","",""
+"region","char(4)","",""
+"first_order_ts","timestamp(3)","",""
+"last_order_ts","timestamp(3)","",""
+"lifetime_orders","bigint","",""
+"lifetime_revenue","decimal(38,2)","",""
+"avg_order_value","decimal(12,2)","",""
+"active_days","bigint","",""
+"first_order_month","varchar","",""
+"tags","array(varchar)","",""
+
+===== SHOW CREATE TABLE lake.mart.customer_ltv =====
+"CREATE TABLE lake.mart.customer_ltv (
+   customer_id integer,
+   customer_code char(12),
+   region char(4),
+   first_order_ts timestamp(3),
+   last_order_ts timestamp(3),
+   lifetime_orders bigint,
+   lifetime_revenue decimal(38, 2),
+   avg_order_value decimal(12, 2),
+   active_days bigint,
+   first_order_month varchar,
+   tags array(varchar)
+)
+WITH (
+   external_location = 'file:///data/warehouse/mart/customer_ltv',
+   format = 'PARQUET'
+)"
+
+===== CLOCK =====
+"UTC","2026-09-21 15:33:30.835 UTC","2026-09-21"

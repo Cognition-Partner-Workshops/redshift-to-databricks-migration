@@ -1,0 +1,9 @@
+report_20: PASS (trino_rows=3, dbx_rows=3, differing_rows=0)
+report_21: PASS (trino_rows=60, dbx_rows=60, differing_rows=0)
+report_22: FAIL (trino_rows=4, dbx_rows=4, differing_rows=4)
+differences:
+  row 1 trino=['NONE', '1250', '353.5341', '350.26'] dbx=['NONE', '1250', '350.0', '350.26']
+  row 2 trino=['LOYALTY5', '1250', '351.49542', '350.13'] dbx=['LOYALTY5', '1250', '349.87', '350.13']
+  row 3 trino=['WELCOME10', '1250', '351.42053', '349.87'] dbx=['SPRING15', '1250', '349.74', '350.00']
+  row 4 trino=['SPRING15', '1250', '349.52023', '350.00'] dbx=['WELCOME10', '1250', '349.61', '349.87']
+report_22_without_median_and_row_order: PASS (trino_rows=4, dbx_rows=4, trino_only=0, dbx_only=0)

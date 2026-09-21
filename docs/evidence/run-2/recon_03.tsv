@@ -1,0 +1,4 @@
+object	trino_only	dbx_only
+mart.daily_revenue	0	0
+mart.customer_ltv	0	0
+---

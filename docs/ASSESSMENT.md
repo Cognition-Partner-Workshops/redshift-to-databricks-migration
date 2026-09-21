@@ -1,55 +1,40 @@
-# Trino estate assessment
+# Trino order-analytics estate: migration assessment
 
-This run keeps the source shape and moves the analytical tables into Delta.
-The operational Postgres side is represented by `trino_migration_demo.ops`.
-The snapshot is stored under `trino_migration_demo.trino_src`.
+Source: `trino/` (Trino cluster; Hive/Parquet `lake` catalog with schemas `core`, `mart`; PostgreSQL `ops` catalog).
+Target: Unity Catalog catalog `trino_migration_demo` (schemas `core`, `ops`, `mart`; raw snapshot in `trino_src`), Databricks SQL on the existing serverless warehouse.
 
-## Risk-ranked inventory
+## Inventory of `trino/sql`
 
-| File | Trino-specific constructs | Risk | Conversion decision |
-| --- | --- | --- | --- |
-| `trino/etc/config.properties` | Single-node coordinator and discovery settings | L | Runtime-only; no SQL conversion |
-| `trino/etc/node.properties` | Trino node identity | L | Runtime-only; no target object |
-| `trino/etc/jvm.config` | Trino JVM flags | L | Runtime-only; no target object |
-| `trino/etc/catalog/lake.properties` | Hive file metastore and Parquet defaults | M | Replace with Delta tables in the migration catalog |
-| `trino/etc/catalog/ops.properties` | PostgreSQL JDBC catalog | H | Snapshot into `ops` tables for this run |
-| `trino/ops-db/init.sql` | PostgreSQL serial, `char(4)`, and `generate_series` | M | Load the exported rows; preserve raw `NORT`/`SOUT` values |
-| `trino/sql/ddl/01_schemas.sql` | Catalog-qualified schema locations | L | Create target `core`, `mart`, and `ops` schemas |
-| `trino/sql/ddl/02_core_tables.sql` | Hive `WITH`, Parquet, and `partitioned_by` | M | Use Delta and `PARTITIONED BY (order_date)` |
-| `trino/sql/seed/05_seed_orders.sql` | `UNNEST(sequence())`, `element_at`, and map literals | M | Snapshot the materialized rows; no seed port needed |
-| `trino/sql/etl/10_build_daily_revenue.sql` | `approx_distinct`, `if`, `try_cast`, and Hive CTAS properties | M | Use `COUNT(DISTINCT)`, Delta CTAS, and native equivalents |
-| `trino/sql/etl/11_build_customer_ltv.sql` | `array_agg` ordering, `date_diff`, `format_datetime`, `arbitrary` | H | Use `array_sort(collect_set)`, elapsed-millis `DIV 86400000` (not `datediff`, see finding A), `date_format`, and `any_value` |
-| `trino/sql/reports/20_region_topline.sql` | `cardinality` | L | Use `size(tags)` |
-| `trino/sql/reports/21_channel_trend.sql` | `date_add` with a negative interval | L | Use `date_sub(current_date(), 30)` |
-| `trino/sql/reports/22_promo_lift.sql` | `CROSS JOIN UNNEST(map_entries(attrs))` and `approx_percentile` | H | Use `LATERAL VIEW explode` and `percentile_approx` |
-| `trino/Makefile` | Container-local CLI execution and file ordering | L | Retain for source rehearsal; target execution uses `dbx_sql.py` |
-| `trino/docker-compose.yml` | Trino, Hive volume, and Postgres services | L | Retain as the source rehearsal environment |
+| # | Asset | Kind | Objects touched | Trino-specific features | Risk |
+|---|-------|------|-----------------|-------------------------|------|
+| 1 | `etl/11_build_customer_ltv.sql` | Nightly full-refresh CTAS | reads `lake.core.orders`, `ops.public.customers`, `ops.public.customer_tags`; writes `lake.mart.customer_ltv` | cross-catalog join (lake + ops); `array_agg(DISTINCT .. ORDER BY ..)`; `date_diff('day', ts, ts)`; `format_datetime`; `arbitrary`; decimal `avg`/`sum` result scale; `CAST(ARRAY[] AS ARRAY(VARCHAR))`; `external_location` | **High** |
+| 2 | `etl/10_build_daily_revenue.sql` | Nightly full-refresh CTAS | reads `lake.core.orders`, `ops.public.customers`; writes `lake.mart.daily_revenue` | cross-catalog join; `element_at` on MAP; `approx_distinct`; `if()`; decimal `/ bigint` result scale; `try_cast`; `date_trunc` returning TIMESTAMP; `current_timestamp` cutoff | **High** |
+| 3 | `reports/22_promo_lift.sql` | Report | `lake.core.orders` | `CROSS JOIN UNNEST(map_entries(..))` (MAP + UNNEST); `approx_percentile`; decimal `AVG` scale | **High** |
+| 4 | `seed/05_seed_orders.sql` | Seed load | writes `lake.core.orders`, `lake.core.order_items` | `UNNEST(sequence())`; `map(ARRAY, ARRAY)`; `element_at` on ARRAY (1-based); `date_add('minute', ..)`; `format('%05d')`; clock-relative data | Medium (not migrated: data lands as a snapshot, not re-seeded) |
+| 5 | `ddl/02_core_tables.sql` | DDL | `lake.core.orders`, `lake.core.order_items` | `MAP(VARCHAR, VARCHAR)`; `TIMESTAMP(3)`; `SMALLINT`; Hive `partitioned_by`, `format = 'PARQUET'` | Medium |
+| 6 | `reports/20_region_topline.sql` | Report | `lake.mart.customer_ltv` | `cardinality(array)`; `AVG` of decimal (scale) | Low-Medium |
+| 7 | `reports/21_channel_trend.sql` | Report | `lake.mart.daily_revenue` | `date_add('day', -30, current_date)`; timestamp-vs-date comparison | Low |
+| 8 | `ddl/01_schemas.sql` | DDL | schemas `lake.core`, `lake.mart` | Hive `location` | Low |
+| 9 | `ops-db/init.sql` (Postgres, outside `sql/`) | Source of the `ops` catalog | `ops.public.customers`, `ops.public.customer_tags` | `char(12)`, `char(4)` padded text; `serial`; `text` | Low (landed as snapshot) |
 
-## Decisions and risks
+Six data objects are in scope: `lake.core.orders` (5,000 rows), `lake.core.order_items` (12,000), `ops.public.customers` (200), `ops.public.customer_tags` (401), `lake.mart.daily_revenue` (360), `lake.mart.customer_ltv` (150; customers whose every order is CANCELLED drop out of the inner join).
 
-`COUNT(DISTINCT)` replaces `approx_distinct`. For these group sizes, the
-exact count makes parity provable instead of carrying HLL estimation error.
-`percentile_approx` replaces `approx_percentile`; both are approximate, so
-their median values can differ even when the input rows match.
-The report 22 columns remain unchanged as requested.
+## Feature-by-feature risk and conversion decision
 
-## Reconciliation findings
+Ranked by how likely a naive syntax swap gives a *different answer*.
 
-- A: Trino `date_diff('day', a, b)` counts elapsed full 24-hour periods while Spark `DATEDIFF` counts calendar-day boundary crossings; `active_days` now uses Unix-millisecond elapsed time divided by 86,400,000.
-- B: Trino keeps decimal division at scale 2 while Spark widens it to scale 18; daily revenue and regional AOV now cast the division and average results to the matching decimal scales.
-- Report 22's `approx_percentile` and `percentile_approx` medians legitimately differ (Trino 352.46 versus Databricks 350.00 for `WELCOME10`) because both engines use approximate estimators; the business should switch both sides to exact `percentile` before parity is signed off.
+1. **Decimal arithmetic scale (High).** Trino keeps the input scale: `avg(DECIMAL(12,2))` is `DECIMAL(12,2)`, `sum(DECIMAL(12,2))` is `DECIMAL(38,2)`, and `DECIMAL(38,2) / BIGINT` is `DECIMAL(38,6)` (verified with `DESCRIBE lake.mart.daily_revenue`); each is rounded half-up. Databricks widens differently: `avg` gives scale 6, `sum` gives `DECIMAL(22,2)`, division gives `DECIMAL(38,6)`. Left alone, `customer_ltv.avg_order_value` and the report averages carry four extra decimals and never match the Trino snapshot. Conversion: compute in Databricks, then `CAST(.. AS DECIMAL(p,s))` to the Trino result type; the cast rounds half-up like Trino. Double rounding is safe here because every quotient is cents divided by a row count far below 10^5, so the 6-place intermediate can never land within 5e-7 of a half-cent boundary without being exactly on it.
+2. **`date_diff('day', ts1, ts2)` (High).** Trino returns whole elapsed 24-hour periods (`(millis2 - millis1) / 86,400,000`, truncated). Databricks `datediff(end, start)` counts calendar-date boundaries, so two timestamps 23 hours apart across midnight give 0 in Trino and 1 in Databricks. Conversion: `(unix_millis(last) - unix_millis(first)) DIV 86400000`.
+3. **`approx_distinct` / `approx_percentile` (High).** Different sketch implementations (Trino HyperLogLog and T-digest vs Databricks HLL++ and KLL-style quantiles) are not guaranteed to agree. `order_count` and `avg_order_value` in `daily_revenue` depend on `approx_distinct(order_id)`; the report median depends on `approx_percentile`. Decision: `order_id` is unique per row, so `COUNT(DISTINCT order_id)` is the exact value the approximation estimates; the recon proves whether Trino's estimate was exact on this data. For the median, `approx_percentile` is converted to `percentile_approx` and its output is compared against the Trino result; a difference is reported as an open item, not hidden.
+4. **`array_agg(DISTINCT tag ORDER BY tag)` (High).** Databricks `collect_list`/`collect_set` have no `ORDER BY` and no ordering guarantee. Conversion: `array_sort(collect_set(tag))` (tags are plain ASCII, so Databricks and Trino sort the same way). Empty arrays: `coalesce(.., CAST(ARRAY[] AS ARRAY(VARCHAR)))` becomes `coalesce(.., CAST(array() AS ARRAY<STRING>))`.
+5. **MAP + UNNEST (High).** `CROSS JOIN UNNEST(map_entries(attrs)) AS u(k, v)` becomes `LATERAL VIEW explode(attrs) u AS attr_key, attr_value`. `element_at(map, key)` becomes `try_element_at(attrs, 'promo')`: under Databricks ANSI mode a plain `attrs['promo']`/`element_at` raises on a missing key, while Trino returns NULL. The `MAP(VARCHAR,VARCHAR)` column itself is landed as `MAP<STRING,STRING>` by exporting the map as JSON text from Trino and `from_json`-ing it on load (CSV cannot carry a map natively).
+6. **Cross-catalog joins (Medium).** `lake.core.* JOIN ops.public.*` spans a Hive catalog and a Postgres catalog. The workspace cannot reach the Trino cluster or the Postgres instance, so both sides are landed into one UC catalog (`core`, `ops`) and the join becomes an ordinary same-catalog join. Postgres `char(4)`/`char(12)` values arrive with their padding intact and are stored as `CHAR(4)`/`CHAR(12)`.
+7. **`format_datetime(ts, 'yyyy-MM')` (Medium).** Joda pattern vs Databricks `date_format` (Java `DateTimeFormatter`); `yyyy-MM` means the same in both. Other patterns (`e`, `Z`, `'T'`) would not.
+8. **`date_trunc('day', ts)` type (Medium).** Both return TIMESTAMP, so `daily_revenue.order_date` stays a midnight timestamp and report 21's `order_date >= <date>` comparison coerces the same way. `TIMESTAMP(3)` (no time zone) maps to `TIMESTAMP_NTZ`.
+9. **Clock-relative logic (Medium).** Seed, ETL cutoff (`order_ts < date_trunc('day', current_timestamp)`) and report 21 (`current_date - 30`) all depend on the run date. Trino and the warehouse both run in UTC; the snapshot, mart rebuild and reports are all executed on the same UTC day so the cutoffs agree.
+10. **`arbitrary()`, `if()`, `cardinality()`, `try_cast` (Low).** Map to `any_value`, `IF`, `size`, `try_cast`.
+11. **Hive storage clauses (Low).** `WITH (format='PARQUET', partitioned_by=..., external_location=...)` are dropped; UC managed Delta tables replace them. `DROP TABLE; CREATE TABLE .. AS` full refresh becomes `CREATE OR REPLACE TABLE .. AS`.
 
-The source `CHAR(4)` region values are preserved, including `NORT` and `SOUT`.
-The source mart excludes cancelled orders before aggregation, and the target
-does the same. The source customer LTV table has 150 of 200 customers because
-the seed's order pattern leaves 50 customers with only cancelled orders.
+## Landing approach
 
-The highest SQL risk is report 22 because map explosion and approximate
-percentiles combine dialect and numeric behavior. The next risk is the
-customer LTV array aggregation because ordering and null handling must stay
-stable. The load boundary is also material: CSV quoting must preserve JSON
-maps and arrays before `from_json` parses them.
-
-The run loaded all nine snapshot tables, backfilled core and ops, rebuilt both
-marts, and executed all three reports. Evidence files under
-`docs/evidence/run-1/` contain the source CSV outputs and target TSV outputs.
+The Trino cluster is not reachable from the workspace, so the six objects are exported from Trino as CSV (`recon/trino/export_snapshot.sql`), uploaded to UC volume `trino_migration_demo.trino_src.landing` through the Files API, and loaded with `read_files` and explicit casts into `trino_src` (raw snapshot, Trino types). `core` and `ops` are then populated from `trino_src`; `mart` is rebuilt from `core`/`ops` by the converted ETL and reconciled against the `trino_src` copies of the two Trino-built marts.
