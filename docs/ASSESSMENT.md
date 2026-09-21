@@ -18,7 +18,7 @@ The snapshot is stored under `trino_migration_demo.trino_src`.
 | `trino/sql/ddl/02_core_tables.sql` | Hive `WITH`, Parquet, and `partitioned_by` | M | Use Delta and `PARTITIONED BY (order_date)` |
 | `trino/sql/seed/05_seed_orders.sql` | `UNNEST(sequence())`, `element_at`, and map literals | M | Snapshot the materialized rows; no seed port needed |
 | `trino/sql/etl/10_build_daily_revenue.sql` | `approx_distinct`, `if`, `try_cast`, and Hive CTAS properties | M | Use `COUNT(DISTINCT)`, Delta CTAS, and native equivalents |
-| `trino/sql/etl/11_build_customer_ltv.sql` | `array_agg` ordering, `date_diff`, `format_datetime`, `arbitrary` | M | Use `array_sort(collect_set)`, `datediff`, `date_format`, and `any_value` |
+| `trino/sql/etl/11_build_customer_ltv.sql` | `array_agg` ordering, `date_diff`, `format_datetime`, `arbitrary` | H | Use `array_sort(collect_set)`, elapsed-millis `DIV 86400000` (not `datediff`, see finding A), `date_format`, and `any_value` |
 | `trino/sql/reports/20_region_topline.sql` | `cardinality` | L | Use `size(tags)` |
 | `trino/sql/reports/21_channel_trend.sql` | `date_add` with a negative interval | L | Use `date_sub(current_date(), 30)` |
 | `trino/sql/reports/22_promo_lift.sql` | `CROSS JOIN UNNEST(map_entries(attrs))` and `approx_percentile` | H | Use `LATERAL VIEW explode` and `percentile_approx` |
@@ -41,8 +41,8 @@ The report 22 columns remain unchanged as requested.
 
 The source `CHAR(4)` region values are preserved, including `NORT` and `SOUT`.
 The source mart excludes cancelled orders before aggregation, and the target
-does the same. The source customer LTV table has 150 rows because the
-deterministic seed gives one region only cancelled orders.
+does the same. The source customer LTV table has 150 of 200 customers because
+the seed's order pattern leaves 50 customers with only cancelled orders.
 
 The highest SQL risk is report 22 because map explosion and approximate
 percentiles combine dialect and numeric behavior. The next risk is the
