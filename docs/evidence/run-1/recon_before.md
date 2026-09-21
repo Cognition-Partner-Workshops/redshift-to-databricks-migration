@@ -1,0 +1,1 @@
+row counts all equal (5000/12000/200/401/360/150); aggregates equal; row diffs: daily_revenue except 0/0 but aov raw mismatch 15; customer_ltv except 150/150, aov raw mismatch 0; column drill-down: active_days 95 mismatches, first_order_month 150 mismatches (load artifact).

@@ -14,6 +14,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/core_orders.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -29,6 +30,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/core_order_items.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -46,6 +48,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/ops_customers.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -57,6 +60,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/ops_customer_tags.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -72,6 +76,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/mart_daily_revenue.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -92,6 +97,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/mart_customer_ltv.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -106,6 +112,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/report_20.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -119,6 +126,7 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/report_21.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );
 
@@ -132,5 +140,6 @@ FROM READ_FILES(
     '/Volumes/trino_migration_demo/landing/files/report_22.csv',
     FORMAT => 'csv',
     HEADER => true,
+    inferColumnTypes => false,
     ESCAPE => '"'
 );

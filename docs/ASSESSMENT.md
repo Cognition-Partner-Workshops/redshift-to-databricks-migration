@@ -33,6 +33,12 @@ exact count makes parity provable instead of carrying HLL estimation error.
 their median values can differ even when the input rows match.
 The report 22 columns remain unchanged as requested.
 
+## Reconciliation findings
+
+- A: Trino `date_diff('day', a, b)` counts elapsed full 24-hour periods while Spark `DATEDIFF` counts calendar-day boundary crossings; `active_days` now uses Unix-millisecond elapsed time divided by 86,400,000.
+- B: Trino keeps decimal division at scale 2 while Spark widens it to scale 18; daily revenue and regional AOV now cast the division and average results to the matching decimal scales.
+- Report 22's `approx_percentile` and `percentile_approx` medians legitimately differ (Trino 352.46 versus Databricks 350.00 for `WELCOME10`) because both engines use approximate estimators; the business should switch both sides to exact `percentile` before parity is signed off.
+
 The source `CHAR(4)` region values are preserved, including `NORT` and `SOUT`.
 The source mart excludes cancelled orders before aggregation, and the target
 does the same. The source customer LTV table has 150 rows because the

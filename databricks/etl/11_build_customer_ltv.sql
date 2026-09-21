@@ -8,7 +8,7 @@ WITH order_summary AS (
         MAX(order_ts) AS last_order_ts,
         COUNT(order_id) AS lifetime_orders,
         SUM(order_total) AS lifetime_revenue,
-        AVG(order_total) AS avg_order_value
+        CAST(AVG(order_total) AS DECIMAL(12, 2)) AS avg_order_value
     FROM trino_migration_demo.core.orders
     WHERE order_status <> 'CANCELLED'
     GROUP BY customer_id
@@ -29,7 +29,7 @@ SELECT
     o.lifetime_orders,
     o.lifetime_revenue,
     o.avg_order_value,
-    DATEDIFF(o.last_order_ts, o.first_order_ts) AS active_days,
+    (UNIX_MILLIS(o.last_order_ts) - UNIX_MILLIS(o.first_order_ts)) DIV 86400000 AS active_days,
     DATE_FORMAT(o.first_order_ts, 'yyyy-MM') AS first_order_month,
     COALESCE(t.tags, CAST(ARRAY() AS ARRAY<STRING>)) AS tags
 FROM trino_migration_demo.ops.customers c
