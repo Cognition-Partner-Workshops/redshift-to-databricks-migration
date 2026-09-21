@@ -1,8 +1,9 @@
 #!/bin/sh
 # Export the six Trino tables to CSV (maps/arrays as JSON text) for landing in a UC volume.
 set -e
-cd /home/ubuntu/trino-estate/trino
-OUT=/home/ubuntu/export/csv
+REPO=$(cd "$(dirname "$0")/../../.." && pwd)
+cd "$REPO/trino"
+OUT="${1:-$REPO/export/csv}"
 mkdir -p "$OUT"
 run() { docker compose exec -T trino trino --output-format CSV_HEADER --execute "$2" > "$OUT/$1.csv"; wc -l "$OUT/$1.csv"; }
 
