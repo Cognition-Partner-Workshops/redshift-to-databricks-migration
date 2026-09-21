@@ -28,3 +28,10 @@ python scripts/seed_redshift.py          # one-time seed
 python scripts/seed_redshift.py --verify # row counts
 python scripts/drift_loader.py           # stage drift before the recon beat
 ```
+
+## Trino track
+
+Operator kit for the Trino → Databricks variant of this demo (estate on branch
+`trino-estate`, runs on `trino-migration-run-N`): `docs/trino/TALK_TRACK.md`,
+`docs/trino/SESSION_PROMPTS.md`, and visual artifacts (HTML run summary, AI/BI
+dashboard JSON) under `docs/trino/artifacts/`.
