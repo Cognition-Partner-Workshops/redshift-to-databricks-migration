@@ -1,0 +1,32 @@
+{
+  "version": "run2-v1",
+  "objects": [
+    {
+      "source_table": "trino_migration_demo.trino_src.mart_daily_revenue",
+      "target_table": "daily_revenue",
+      "key": {"source": ["order_date", "region", "promo_group"], "target": ["order_date", "region", "promo_group"]},
+      "fields": [
+        {"source": "order_count", "target": "order_count", "source_type": "BIGINT", "target_type": "bigint", "rules": ["identity"]},
+        {"source": "gross_revenue", "target": "gross_revenue", "source_type": "DECIMAL(38,2)", "target_type": "decimal(38,2)", "rules": ["identity"]},
+        {"source": "avg_order_value", "target": "avg_order_value", "source_type": "DECIMAL(38,2)", "target_type": "decimal(38,2)", "rules": ["decimal_round"]}
+      ]
+    },
+    {
+      "source_table": "trino_migration_demo.trino_src.mart_customer_ltv",
+      "target_table": "customer_ltv",
+      "key": {"source": ["customer_id"], "target": ["customer_id"]},
+      "fields": [
+        {"source": "customer_code", "target": "customer_code", "source_type": "CHAR(12)", "target_type": "string", "rules": ["rstrip_spaces"]},
+        {"source": "region", "target": "region", "source_type": "CHAR(4)", "target_type": "string", "rules": ["rstrip_spaces"]},
+        {"source": "first_order_ts", "target": "first_order_ts", "source_type": "TIMESTAMP(3)", "target_type": "timestamp_ntz", "rules": ["datetime_utc_truncate_ms"]},
+        {"source": "last_order_ts", "target": "last_order_ts", "source_type": "TIMESTAMP(3)", "target_type": "timestamp_ntz", "rules": ["datetime_utc_truncate_ms"]},
+        {"source": "lifetime_orders", "target": "lifetime_orders", "source_type": "BIGINT", "target_type": "bigint", "rules": ["identity"]},
+        {"source": "lifetime_revenue", "target": "lifetime_revenue", "source_type": "DECIMAL(38,2)", "target_type": "decimal(38,2)", "rules": ["identity"]},
+        {"source": "avg_order_value", "target": "avg_order_value", "source_type": "DECIMAL(12,2)", "target_type": "decimal(12,2)", "rules": ["decimal_round"]},
+        {"source": "active_days", "target": "active_days", "source_type": "BIGINT", "target_type": "bigint", "rules": ["identity"]},
+        {"source": "first_order_month", "target": "first_order_month", "source_type": "VARCHAR", "target_type": "string", "rules": ["identity"]},
+        {"source": "tags", "target": "tags", "source_type": "ARRAY(VARCHAR)", "target_type": "array<string>", "rules": ["identity"]}
+      ]
+    }
+  ]
+}

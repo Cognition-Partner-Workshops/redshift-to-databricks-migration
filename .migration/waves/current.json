@@ -1,0 +1,8 @@
+{
+  "manifest": "wave-0.json",
+  "mode": "start",
+  "run_id": null,
+  "hook_probe": "unknown",
+  "workspace": "/home/ubuntu/repos/redshift-to-databricks-migration",
+  "plugin": "/home/ubuntu/repos/dbx-migration-plugin"
+}

@@ -1,0 +1,48 @@
+{
+  "wave": 1,
+  "tag": "1",
+  "manifest_sha": "d6e072d6ee88",
+  "width": 1,
+  "run_id": null,
+  "base_sha": null,
+  "mode": "start",
+  "stop_c": "D-4",
+  "hook_probe": "unknown",
+  "doctor_signed_at": null,
+  "breaker_tripped_on": null,
+  "auto_merge": false,
+  "closed": false,
+  "pr_url": null,
+  "pr_head": null,
+  "write_target_overlaps": [],
+  "undeclared_write_targets": [],
+  "unreported_write_targets": [],
+  "pipeline_order": [],
+  "merge_overrides": [],
+  "waived_gates": [],
+  "batches": [
+    {
+      "id": "wave-1-mart-report",
+      "units": [
+        "marts",
+        "report_22"
+      ],
+      "status": "BLOCKED",
+      "pr_url": null,
+      "pr_head": null,
+      "branch": "",
+      "recon_verdict": "NOT_RUN",
+      "recon_mode": "snapshot",
+      "merge_eligible": false,
+      "write_targets": [
+        "trino_migration_demo.mart"
+      ],
+      "changed_paths": [],
+      "one_line_summary": "Blocked: factory doctor and migration-secret environment were unavailable."
+    }
+  ],
+  "verify": null,
+  "resync": null,
+  "close": null,
+  "close_minutes": 30
+}

@@ -1,0 +1,60 @@
+{
+  "wave": 0,
+  "repo": "/home/ubuntu/repos/redshift-to-databricks-migration",
+  "child_macro": "child",
+  "verify_macro": "verify",
+  "batches": [
+    {
+      "id": "wave-0-ops",
+      "units": [
+        "ops_tables"
+      ],
+      "brief": "Reconcile operational PostgreSQL tables before mart verification.",
+      "write_targets": [
+        "trino_migration_demo.ops"
+      ],
+      "deploy_objects": [],
+      "verify_depth": "full",
+      "gates": [
+        {
+          "id": "ops-recon",
+          "kind": "row_parity",
+          "status": "pending",
+          "evidence": ""
+        }
+      ]
+    }
+  ],
+  "base_branch": "trino-migration-run-2",
+  "width": 1,
+  "breaker_threshold": 1,
+  "max_minutes": 60,
+  "close_minutes": 30,
+  "doctor_max_age": 15,
+  "degraded": false,
+  "target_namespace": "trino_migration_demo.ops",
+  "stop_c": "D-4",
+  "gates_sha": "b45bdb080016b4bff2fd868d8afa724fdda4e4593c078424a3d76d28c3f7be55",
+  "source": {
+    "family": "postgres",
+    "secret": "TRINO_OPS_DSN"
+  },
+  "verify_depth": "full",
+  "cost_estimate": {
+    "source_statements": 10,
+    "target_statements": 8,
+    "source_rows_fetched": null,
+    "target_rows_fetched": null
+  },
+  "capabilities": {
+    "identity": "unverified",
+    "catalogs": [
+      "trino_migration_demo"
+    ],
+    "guard_mode": "block",
+    "stop_mode": "hard",
+    "ready": false,
+    "doctor": "blocked_by_environment_guard"
+  },
+  "auto_merge": false
+}

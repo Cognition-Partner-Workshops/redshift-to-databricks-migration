@@ -1,0 +1,25 @@
+{
+  "version": "run2-v1",
+  "objects": [
+    {
+      "source_table": "public.customers",
+      "target_table": "customers",
+      "key": {"source": ["customer_id"], "target": ["customer_id"]},
+      "fields": [
+        {"source": "customer_code", "target": "customer_code", "source_type": "CHAR(12)", "target_type": "string", "rules": ["rstrip_spaces"]},
+        {"source": "full_name", "target": "full_name", "source_type": "VARCHAR(120)", "target_type": "string", "rules": ["identity"]},
+        {"source": "email", "target": "email", "source_type": "VARCHAR(160)", "target_type": "string", "rules": ["identity"]},
+        {"source": "region", "target": "region", "source_type": "CHAR(4)", "target_type": "string", "rules": ["rstrip_spaces"]},
+        {"source": "signup_date", "target": "signup_date", "source_type": "DATE", "target_type": "date", "rules": ["identity"]},
+        {"source": "is_active", "target": "is_active", "source_type": "BOOLEAN", "target_type": "boolean", "rules": ["identity"]},
+        {"source": "created_at", "target": "created_at", "source_type": "TIMESTAMP(3)", "target_type": "timestamp_ntz", "rules": ["datetime_utc_truncate_ms"]}
+      ]
+    },
+    {
+      "source_table": "public.customer_tags",
+      "target_table": "customer_tags",
+      "key": {"source": ["customer_id", "tag"], "target": ["customer_id", "tag"]},
+      "fields": []
+    }
+  ]
+}
