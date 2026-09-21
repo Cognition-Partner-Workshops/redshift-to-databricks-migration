@@ -1,0 +1,17 @@
+== trino/sql/reports/22_promo_lift.sql (run 1)
+   promo   | orders | median_order_total | average_order_total 
+-----------+--------+--------------------+---------------------
+ LOYALTY5  |   1250 |           351.2321 |              350.13 
+ SPRING15  |   1250 |           351.1619 |              350.00 
+ WELCOME10 |   1250 |            349.783 |              349.87 
+ NONE      |   1250 |           348.0417 |              350.26 
+(4 rows)
+
+== same file, run 2 (approx_percentile is non-deterministic)
+   promo   | orders | median_order_total | average_order_total 
+-----------+--------+--------------------+---------------------
+ LOYALTY5  |   1250 |           351.2566 |              350.13 
+ NONE      |   1250 |           349.7516 |              350.26 
+ SPRING15  |   1250 |           348.9109 |              350.00 
+ WELCOME10 |   1250 |          348.00076 |              349.87 
+(4 rows)

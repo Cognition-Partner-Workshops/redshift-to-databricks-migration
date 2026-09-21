@@ -1,0 +1,7 @@
+== databricks/reports/22_promo_lift.sql (Databricks SQL warehouse)
+promo	orders	median_order_total	exact_median	average_order_total
+NONE	1250	350.00	350.26	350.26
+LOYALTY5	1250	349.87	350.13	350.13
+SPRING15	1250	349.74	350.00	350.00
+WELCOME10	1250	349.61	349.87	349.87
+---
