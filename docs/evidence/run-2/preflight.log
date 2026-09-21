@@ -1,0 +1,1 @@
+manifest 'gates_sha' 'b45bdb080016b4bff2fd868d8afa724fdda4e4593c078424a3d76d28c3f7be55' is not approved by row 'D-4' of /home/ubuntu/repos/redshift-to-databricks-migration/.migration/06_decisions.md (a table row with cells | D-<n> | user:<id> | STOP C wave-0 gates_sha <value> |); this run halts until STOP C records it

@@ -1,0 +1,8 @@
+{
+  "source": "databricks",
+  "extracted_at": "2026-09-21T15:40:26.000Z",
+  "row_counts": {
+    "trino_migration_demo.trino_src.mart_daily_revenue": 360,
+    "trino_migration_demo.trino_src.mart_customer_ltv": 150
+  }
+}
