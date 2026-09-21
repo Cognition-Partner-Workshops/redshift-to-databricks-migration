@@ -52,6 +52,7 @@ def statements(text: str):
             while i < n and text[i] != "\n":
                 i += 1
         elif c == "/" and i + 1 < n and text[i + 1] == "*":
+            cur.append(" ")
             i += 2
             while i + 1 < n and not (text[i] == "*" and text[i + 1] == "/"):
                 i += 1
