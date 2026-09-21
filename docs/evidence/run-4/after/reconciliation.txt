@@ -1,0 +1,52 @@
+== recon/trino/01_row_counts.sql
+table_name	trino_rows	databricks_rows	delta
+core.order_items (landed vs exported)	12000	12000	0
+core.orders (landed vs exported)	5000	5000	0
+customer_ltv	150	150	0
+daily_revenue	360	360	0
+ops.customer_tags (landed vs exported)	401	401	0
+ops.customers (landed vs exported)	200	200	0
+---
+
+== recon/trino/02_column_aggregates.sql
+metric	trino_value	databricks_value	delta
+customer_ltv.active_days SUM	17312.00	17312.00	0.00
+customer_ltv.avg_order_value SUM	52506.50	52506.50	0.00
+customer_ltv.distinct first_order_month	1.00	1.00	0.00
+customer_ltv.lifetime_orders SUM	3750.00	3750.00	0.00
+customer_ltv.lifetime_revenue SUM	1312662.50	1312662.50	0.00
+customer_ltv.max last_order_ts (epoch s)	1790015778.00	1790015778.00	0.00
+customer_ltv.min first_order_ts (epoch s)	1779650598.00	1779650598.00	0.00
+customer_ltv.tag count SUM	302.00	302.00	0.00
+daily_revenue.avg_order_value SUM	126839.53	126839.53	0.00
+daily_revenue.distinct order_date	120.00	120.00	0.00
+daily_revenue.distinct promo_group	2.00	2.00	0.00
+daily_revenue.distinct region	3.00	3.00	0.00
+daily_revenue.gross_revenue SUM	1297453.52	1297453.52	0.00
+daily_revenue.order_count SUM	3704.00	3704.00	0.00
+---
+
+== recon/trino/03_symmetric_row_diffs.sql
+direction	rows
+customer_ltv: in Databricks, not in Trino	0
+customer_ltv: in Trino, not in Databricks	0
+daily_revenue: in Databricks, not in Trino	0
+daily_revenue: in Trino, not in Databricks	0
+---
+
+== recon/trino/04_report_parity.sql
+report	grain	d_customers	d_revenue	d_aov	d_tag_count
+report_20_region_topline	EAST	0	0.00	0.00	0
+report_20_region_topline	SOUT	0	0.00	0.00	0
+report_20_region_topline	WEST	0	0.00	0.00	0
+---
+report	rows_compared	unmatched_rows	revenue_mismatched_rows	orders_mismatched_rows	max_abs_revenue_delta	max_abs_orders_delta
+report_21_channel_trend	60	0	0	0	0.00	0
+---
+report	grain	d_orders	d_average_order_total	dbx_approx_median	dbx_exact_median
+report_22_promo_lift	LOYALTY5	0	0.00	349.87	350.13
+report_22_promo_lift	NONE	0	0.00	350.00	350.26
+report_22_promo_lift	SPRING15	0	0.00	349.74	350.00
+report_22_promo_lift	WELCOME10	0	0.00	349.61	349.87
+---
+

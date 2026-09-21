@@ -1,0 +1,7 @@
+== trino/sql/reports/20_region_topline.sql
+ region | customers |  revenue  |  aov   | tag_count 
+--------+-----------+-----------+--------+-----------
+ SOUT   |        50 | 437825.00 | 350.26 |       101 
+ EAST   |        50 | 437500.00 | 350.00 |       100 
+ WEST   |        50 | 437337.50 | 349.87 |       101 
+(3 rows)

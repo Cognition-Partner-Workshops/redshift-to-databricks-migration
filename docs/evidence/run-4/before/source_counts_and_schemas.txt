@@ -1,0 +1,96 @@
+== row counts and schemas in Trino
+
+-- lake.core.orders
+ rows 
+------
+ 5000 
+(1 row)
+    Column     |         Type          |     Extra     | Comment 
+---------------+-----------------------+---------------+---------
+ order_id      | bigint                |               |         
+ customer_id   | integer               |               |         
+ order_ts      | timestamp(3)          |               |         
+ order_status  | varchar               |               |         
+ order_total   | decimal(12,2)         |               |         
+ sales_channel | varchar               |               |         
+ attrs         | map(varchar, varchar) |               |         
+ order_date    | date                  | partition key |         
+(8 rows)
+
+-- lake.core.order_items
+ rows  
+-------
+ 12000 
+(1 row)
+    Column     |     Type      | Extra | Comment 
+---------------+---------------+-------+---------
+ order_item_id | bigint        |       |         
+ order_id      | bigint        |       |         
+ sku           | varchar       |       |         
+ quantity      | smallint      |       |         
+ unit_price    | decimal(10,2) |       |         
+ discount_pct  | decimal(5,4)  |       |         
+(6 rows)
+
+-- ops.public.customers
+ rows 
+------
+  200 
+(1 row)
+    Column     |     Type     | Extra | Comment 
+---------------+--------------+-------+---------
+ customer_id   | integer      |       |         
+ customer_code | char(12)     |       |         
+ full_name     | varchar(120) |       |         
+ email         | varchar(160) |       |         
+ region        | char(4)      |       |         
+ signup_date   | date         |       |         
+ is_active     | boolean      |       |         
+ created_at    | timestamp(6) |       |         
+(8 rows)
+
+-- ops.public.customer_tags
+ rows 
+------
+  401 
+(1 row)
+   Column    |  Type   | Extra | Comment 
+-------------+---------+-------+---------
+ customer_id | integer |       |         
+ tag         | varchar |       |         
+(2 rows)
+
+-- lake.mart.daily_revenue
+ rows 
+------
+  360 
+(1 row)
+     Column      |     Type      | Extra | Comment 
+-----------------+---------------+-------+---------
+ order_date      | timestamp(3)  |       |         
+ region          | char(4)       |       |         
+ promo_group     | varchar(11)   |       |         
+ order_count     | bigint        |       |         
+ gross_revenue   | decimal(38,2) |       |         
+ avg_order_value | decimal(38,6) |       |         
+(6 rows)
+
+-- lake.mart.customer_ltv
+ rows 
+------
+  150 
+(1 row)
+      Column       |      Type      | Extra | Comment 
+-------------------+----------------+-------+---------
+ customer_id       | integer        |       |         
+ customer_code     | char(12)       |       |         
+ region            | char(4)        |       |         
+ first_order_ts    | timestamp(3)   |       |         
+ last_order_ts     | timestamp(3)   |       |         
+ lifetime_orders   | bigint         |       |         
+ lifetime_revenue  | decimal(38,2)  |       |         
+ avg_order_value   | decimal(12,2)  |       |         
+ active_days       | bigint         |       |         
+ first_order_month | varchar        |       |         
+ tags              | array(varchar) |       |         
+(11 rows)
