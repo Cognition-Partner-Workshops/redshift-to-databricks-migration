@@ -17,3 +17,7 @@ SQL estate for our order-analytics warehouse on Amazon Redshift Serverless
   ingestion pipeline.
 - Distribution/sort keys are tuned for the current query mix — see the DDL
   before changing join patterns.
+
+## Other estates
+
+- [Order analytics on Trino](trino/README.md)

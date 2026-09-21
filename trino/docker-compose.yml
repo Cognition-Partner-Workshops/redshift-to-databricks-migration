@@ -1,0 +1,35 @@
+services:
+  trino:
+    image: trinodb/trino:latest
+    user: root
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./etc:/etc/trino:ro
+      - ./sql:/workspace/sql:ro
+      - warehouse:/data/warehouse
+    depends_on:
+      ops-db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/v1/info | grep -q '\"starting\":false'"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  ops-db:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: ops
+      POSTGRES_USER: ops
+      POSTGRES_PASSWORD: ops
+    volumes:
+      - ./ops-db/init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ops -d ops"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  warehouse:
