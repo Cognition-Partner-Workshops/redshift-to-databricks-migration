@@ -1,0 +1,11 @@
+{
+  "catalogs": ["trino_migration_demo"],
+  "legacy_sources": ["TRINO_OPS_DSN"],
+  "guard_mode": "block",
+  "target_hosts": [],
+  "bundle_targets": [],
+  "lakebase_projects": [],
+  "lakebase_branches": [],
+  "run_mode": "live",
+  "fixture_endpoints": []
+}

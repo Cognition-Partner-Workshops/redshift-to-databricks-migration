@@ -1,2 +1,4 @@
 __pycache__/
 trino/.export/
+.migration/.hook_probe_nonce
+.migration/live_playbooks.json
