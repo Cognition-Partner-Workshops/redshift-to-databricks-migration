@@ -1,0 +1,159 @@
+<section class="a-section">
+  <h2 class="a-section__title">Outcome</h2>
+  <p class="a-prose">One rehearsal run moved a six-object Trino estate (Hive/Parquet lake catalog plus a PostgreSQL ops catalog) to Unity Catalog, converted 8 SQL assets, and reconciled every mart row to the cent. Reconciliation caught two semantic divergences a transpiler would have shipped, and surfaced one source-side finding (approximate percentiles) that is still open.</p>
+  <div class="a-grid">
+    <div class="a-metric"><div class="a-metric__label">Source objects migrated</div><div class="a-metric__value">6</div><div class="a-metric__delta">2 catalogs, 3 schemas</div></div>
+    <div class="a-metric"><div class="a-metric__label">Rows reconciled</div><div class="a-metric__value">18,111</div><div class="a-metric__delta" data-trend="up">100% count parity</div></div>
+    <div class="a-metric"><div class="a-metric__label">Mart rows differing</div><div class="a-metric__value">0</div><div class="a-metric__delta" data-trend="up">was 15 + 95 before fixes</div></div>
+    <div class="a-metric"><div class="a-metric__label">Semantic findings</div><div class="a-metric__value">3</div><div class="a-metric__delta">2 fixed, 1 open</div></div>
+  </div>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">Architecture: before and after</h2>
+  <p class="a-section__note">Select a node for detail. Trino federates two systems at query time; Databricks lands both as Delta tables in one catalog.</p>
+  <div class="a-diagram" data-a-diagram tabindex="0">
+    <div class="a-diagram__controls">
+      <button type="button" data-a-zoom="in" aria-label="Zoom in">+</button>
+      <button type="button" data-a-zoom="out" aria-label="Zoom out">−</button>
+      <button type="button" data-a-zoom="reset">Reset</button>
+    </div>
+    <svg data-a-diagram-canvas viewBox="0 0 960 400" role="img" aria-label="Left: Trino coordinator federating a Hive/Parquet lake catalog and a PostgreSQL ops catalog, feeding two nightly marts and three reports. Middle: a snapshot export and conversion step. Right: Databricks Unity Catalog trino_migration_demo with core, ops-derived and mart schemas, served by a SQL warehouse and an AI/BI dashboard.">
+      <g data-a-diagram-viewport>
+        <g class="a-group"><rect x="20" y="20" width="360" height="360" rx="8"/><text x="36" y="44" class="a-group__label">Before · Trino (Docker, single node)</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="lake catalog (Hive connector)" data-a-detail="File metastore over Parquet. core.orders (5,000, partitioned by order_date, MAP attrs), core.order_items (12,000), mart.daily_revenue (360), mart.customer_ltv (150)."><rect x="40" y="70" width="150" height="56"/><text class="a-node__title" x="52" y="94">lake (Hive/Parquet)</text><text class="a-node__sub" x="52" y="112">core · mart</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="ops catalog (PostgreSQL connector)" data-a-detail="Live operational Postgres. customers (200, CHAR(4) region), customer_tags (401). Joined cross-catalog by Trino at query time."><rect x="210" y="70" width="150" height="56"/><text class="a-node__title" x="222" y="94">ops (PostgreSQL)</text><text class="a-node__sub" x="222" y="112">customers · tags</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="Trino coordinator" data-a-detail="Runs cross-catalog SQL: approx_distinct, map_entries + UNNEST, array_agg ORDER BY, date_diff, format_datetime, approx_percentile."><rect x="110" y="170" width="180" height="56"/><text class="a-node__title" x="122" y="194">Trino coordinator</text><text class="a-node__sub" x="122" y="212">federated ANSI SQL</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="Nightly ETL + reports" data-a-detail="2 CTAS mart builds (daily_revenue, customer_ltv) and 3 reports (region topline, channel/promo trend, promo lift)."><rect x="110" y="280" width="180" height="56"/><text class="a-node__title" x="122" y="304">2 marts · 3 reports</text><text class="a-node__sub" x="122" y="322">Trino dialect</text></g>
+        <path class="a-edge" d="M115 126 L170 170"/><path class="a-edge" d="M285 126 L230 170"/><path class="a-edge" d="M200 226 L200 280"/>
+
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="Snapshot + convert" data-a-detail="Trino exports CSV snapshots to a UC volume (read_files with ESCAPE and inferColumnTypes=false). Devin converts each Trino statement to Databricks SQL preserving semantics, then reconciles."><rect x="410" y="170" width="140" height="56"/><text class="a-node__title" x="422" y="194">Snapshot + convert</text><text class="a-node__sub" x="422" y="212">CSV → volume → Delta</text></g>
+        <path class="a-edge" d="M290 198 L410 198"/><text class="a-edge__label" x="300" y="190">export</text>
+        <path class="a-edge" d="M550 198 L600 198"/><text class="a-edge__label" x="552" y="190">load</text>
+
+        <g class="a-group"><rect x="600" y="20" width="340" height="360" rx="8"/><text x="616" y="44" class="a-group__label">After · Databricks Unity Catalog</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="trino_src (snapshot)" data-a-detail="Raw Trino snapshot kept as the reconciliation baseline. Stands in for live federation, which the Docker Trino cannot offer from the workspace."><rect x="620" y="70" width="140" height="56"/><text class="a-node__title" x="632" y="94">trino_src</text><text class="a-node__sub" x="632" y="112">snapshot baseline</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="core + ops (Delta)" data-a-detail="Typed Delta tables. attrs MAP preserved via from_json; CHAR(4) region values (NORT/SOUT) kept as-is."><rect x="780" y="70" width="140" height="56"/><text class="a-node__title" x="792" y="94">core · ops</text><text class="a-node__sub" x="792" y="112">typed Delta</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="mart (Delta)" data-a-detail="daily_revenue and customer_ltv rebuilt with converted SQL. Row-level EXCEPT diff against trino_src is 0 both ways."><rect x="700" y="170" width="140" height="56"/><text class="a-node__title" x="712" y="194">mart</text><text class="a-node__sub" x="712" y="212">daily_revenue · customer_ltv</text></g>
+        <g class="a-node" data-a-node tabindex="0" role="button" data-a-title="SQL warehouse + AI/BI dashboard" data-a-detail="Existing serverless warehouse runs the converted reports and the reconciliation queries; the AI/BI dashboard shows marts and the recon scorecard live."><rect x="700" y="280" width="140" height="56"/><text class="a-node__title" x="712" y="304">Warehouse · AI/BI</text><text class="a-node__sub" x="712" y="322">reports · recon</text></g>
+        <path class="a-edge a-edge--dim" d="M690 126 L740 170"/><path class="a-edge" d="M850 126 L800 170"/><path class="a-edge" d="M770 226 L770 280"/>
+        <text class="a-edge__label" x="690" y="150">recon</text>
+      </g>
+    </svg>
+    <div class="a-diagram__inspector" data-a-inspector>Select a node to see details.</div>
+  </div>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">Reconciliation scorecard</h2>
+  <p class="a-section__note">Source: Trino snapshot (<code>trino_src</code>) versus rebuilt Databricks marts, run 1. "Before" is the first converted SQL; "after" is the same SQL with semantic fixes.</p>
+  <div class="a-table-scroll">
+    <table class="a-table">
+      <caption>Row counts, aggregates and row-level diffs, before and after semantic fixes</caption>
+      <thead><tr><th scope="col">Check</th><th scope="col" data-numeric>Trino</th><th scope="col" data-numeric>Databricks</th><th scope="col">Before fixes</th><th scope="col">After fixes</th></tr></thead>
+      <tbody>
+        <tr><th scope="row">core.orders rows</th><td data-numeric>5,000</td><td data-numeric>5,000</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">core.order_items rows</th><td data-numeric>12,000</td><td data-numeric>12,000</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">ops.customers rows</th><td data-numeric>200</td><td data-numeric>200</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">ops.customer_tags rows</th><td data-numeric>401</td><td data-numeric>401</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">mart.daily_revenue rows</th><td data-numeric>360</td><td data-numeric>360</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">mart.customer_ltv rows</th><td data-numeric>150</td><td data-numeric>150</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">daily_revenue Σ gross_revenue</th><td data-numeric>1,301,438.76</td><td data-numeric>1,301,438.76</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">customer_ltv Σ lifetime_revenue</th><td data-numeric>1,312,662.50</td><td data-numeric>1,312,662.50</td><td>match</td><td>match</td></tr>
+        <tr><th scope="row">daily_revenue rows with different avg_order_value (raw)</th><td data-numeric>—</td><td data-numeric>—</td><td><strong>15 mismatches</strong></td><td>0</td></tr>
+        <tr><th scope="row">customer_ltv rows with different active_days</th><td data-numeric>—</td><td data-numeric>—</td><td><strong>95 of 150 mismatches</strong></td><td>0</td></tr>
+        <tr><th scope="row">customer_ltv symmetric EXCEPT (rows only on one side)</th><td data-numeric>—</td><td data-numeric>—</td><td><strong>150 / 150</strong></td><td>0 / 0</td></tr>
+        <tr><th scope="row">report 22 promo ranking</th><td data-numeric>—</td><td data-numeric>—</td><td>differs</td><td><strong>differs (open)</strong></td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">What reconciliation caught</h2>
+  <p class="a-prose">All three queries below are valid on both engines and return plausible numbers. Only comparing data, row by row, against the source exposes them.</p>
+
+  <div class="a-callout a-callout--decision">
+    <strong>Finding A — elapsed days vs calendar days.</strong> Trino <code>date_diff('day', first_ts, last_ts)</code> counts full 24-hour periods. Spark <code>DATEDIFF</code> counts midnight crossings. 95 of 150 customers got a different <code>active_days</code>. Fix: <code>(UNIX_MILLIS(last_ts) − UNIX_MILLIS(first_ts)) DIV 86400000</code>.
+  </div>
+  <div class="a-callout a-callout--decision">
+    <strong>Finding B — decimal division scale.</strong> Trino keeps <code>DECIMAL(12,2) / BIGINT</code> at scale 2; Spark widens to scale 18 and rounds differently in 15 daily rows. Fix: cast the division and <code>AVG</code> results back to the source scale.
+  </div>
+  <div class="a-callout a-callout--risk">
+    <strong>Finding C — approximate percentiles (open).</strong> Trino <code>approx_percentile</code> and Spark <code>percentile_approx</code> use different estimators, so report 22's promo ranking flips. Both engines are "correct". Decision needed: adopt exact <code>percentile</code> on both sides before sign-off.
+  </div>
+
+  <div class="a-table-scroll">
+    <table class="a-table">
+      <caption>Report 22 (promo lift): median order total by promotion, ranked, as returned by each engine</caption>
+      <thead><tr><th scope="col">Rank</th><th scope="col">Trino promo</th><th scope="col" data-numeric>Trino median</th><th scope="col">Databricks promo</th><th scope="col" data-numeric>Databricks median</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>WELCOME10</td><td data-numeric>352.46</td><td>NONE</td><td data-numeric>350.00</td></tr>
+        <tr><td>2</td><td>LOYALTY5</td><td data-numeric>351.90</td><td>LOYALTY5</td><td data-numeric>349.87</td></tr>
+        <tr><td>3</td><td>SPRING15</td><td data-numeric>351.51</td><td>SPRING15</td><td data-numeric>349.74</td></tr>
+        <tr><td>4</td><td>NONE</td><td data-numeric>351.35</td><td>WELCOME10</td><td data-numeric>349.61</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">Dialect conversions applied</h2>
+  <div class="a-table-scroll">
+    <table class="a-table">
+      <caption>Trino constructs and their Databricks SQL equivalents used in this run</caption>
+      <thead><tr><th scope="col">Trino</th><th scope="col">Databricks SQL</th><th scope="col">Note</th></tr></thead>
+      <tbody>
+        <tr><td><code>approx_distinct(x)</code></td><td><code>COUNT(DISTINCT x)</code></td><td>exact on this data size; keeps report parity</td></tr>
+        <tr><td><code>CROSS JOIN UNNEST(map_entries(attrs))</code></td><td><code>LATERAL VIEW EXPLODE(attrs)</code></td><td>map to key/value rows</td></tr>
+        <tr><td><code>array_agg(DISTINCT t ORDER BY t)</code></td><td><code>array_sort(collect_set(t))</code></td><td>ordered distinct array</td></tr>
+        <tr><td><code>date_diff('day', a, b)</code></td><td><code>(UNIX_MILLIS(b) − UNIX_MILLIS(a)) DIV 86400000</code></td><td>finding A, not <code>DATEDIFF</code></td></tr>
+        <tr><td><code>format_datetime(ts, 'yyyy-MM')</code></td><td><code>date_format(ts, 'yyyy-MM')</code></td><td></td></tr>
+        <tr><td><code>arbitrary(x)</code> · <code>cardinality(a)</code></td><td><code>any_value(x)</code> · <code>size(a)</code></td><td></td></tr>
+        <tr><td><code>approx_percentile(x, 0.5)</code></td><td><code>percentile_approx(x, 0.5)</code></td><td>finding C, different estimators</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">Migrated mart: weekly gross revenue</h2>
+  <figure class="a-panel" data-a-chart="stacked-bar" data-a-chart-height="260">
+    <figcaption class="a-panel__title">Weekly gross revenue by promo group, <code>trino_migration_demo.mart.daily_revenue</code> (USD, weeks starting Monday)</figcaption>
+    <div class="a-table-scroll">
+      <table class="a-table">
+        <caption class="a-visually-hidden">Weekly gross revenue by promo group</caption>
+        <thead><tr><th scope="col">Week</th><th scope="col" data-numeric>Organic</th><th scope="col" data-numeric>Promotional</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">May 18</th><td data-numeric>2524</td><td data-numeric>5050</td></tr>
+          <tr><th scope="row">May 25</th><td data-numeric>41639</td><td data-numeric>83899</td></tr>
+          <tr><th scope="row">Jun 1</th><td data-numeric>39235</td><td data-numeric>78460</td></tr>
+          <tr><th scope="row">Jun 8</th><td data-numeric>36830</td><td data-numeric>74175</td></tr>
+          <tr><th scope="row">Jun 15</th><td data-numeric>34426</td><td data-numeric>68807</td></tr>
+          <tr><th scope="row">Jun 22</th><td data-numeric>32474</td><td data-numeric>63998</td></tr>
+          <tr><th scope="row">Jun 29</th><td data-numeric>29581</td><td data-numeric>59189</td></tr>
+          <tr><th scope="row">Jul 6</th><td data-numeric>27177</td><td data-numeric>54380</td></tr>
+          <tr><th scope="row">Jul 13</th><td data-numeric>24772</td><td data-numeric>49571</td></tr>
+          <tr><th scope="row">Jul 20</th><td data-numeric>22368</td><td data-numeric>44762</td></tr>
+          <tr><th scope="row">Jul 27</th><td data-numeric>19963</td><td data-numeric>40229</td></tr>
+          <tr><th scope="row">Aug 3</th><td data-numeric>17559</td><td data-numeric>35109</td></tr>
+          <tr><th scope="row">Aug 10</th><td data-numeric>15154</td><td data-numeric>30505</td></tr>
+          <tr><th scope="row">Aug 17</th><td data-numeric>12750</td><td data-numeric>25456</td></tr>
+          <tr><th scope="row">Aug 24</th><td data-numeric>10346</td><td data-numeric>20647</td></tr>
+          <tr><th scope="row">Aug 31</th><td data-numeric>8040</td><td data-numeric>15838</td></tr>
+          <tr><th scope="row">Sep 7</th><td data-numeric>11557</td><td data-numeric>22465</td></tr>
+          <tr><th scope="row">Sep 14</th><td data-numeric>47494</td><td data-numeric>95006</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </figure>
+</section>
+
+<section class="a-section">
+  <h2 class="a-section__title">Run sequence</h2>
+  <article class="a-phase"><div class="a-phase__index">01</div><div><div class="a-phase__head"><h3 class="a-phase__title">Assess the estate</h3><span class="a-status" data-state="done">Done</span></div><p class="a-prose">Inventory 8 SQL assets, rank by Trino-specific risk (maps, cross-catalog joins, approximate functions).</p></div></article>
+  <article class="a-phase"><div class="a-phase__index">02</div><div><div class="a-phase__head"><h3 class="a-phase__title">Land the snapshot</h3><span class="a-status" data-state="done">Done</span></div><p class="a-prose">Export six tables, load into <code>trino_src</code>, type into <code>core</code> and <code>ops</code> Delta tables. Two load bugs fixed (CSV quoting of JSON maps; month strings inferred as dates).</p></div></article>
+  <article class="a-phase"><div class="a-phase__index">03</div><div><div class="a-phase__head"><h3 class="a-phase__title">Convert and rebuild marts</h3><span class="a-status" data-state="done">Done</span></div><p class="a-prose">Convert ETL and reports, rebuild both marts on the existing SQL warehouse.</p></div></article>
+  <article class="a-phase"><div class="a-phase__index">04</div><div><div class="a-phase__head"><h3 class="a-phase__title">Reconcile to green</h3><span class="a-status" data-state="done">Done</span></div><p class="a-prose">Counts, aggregates, symmetric row diffs, raw-value drill-down. Red → diagnose findings A and B → fix → green.</p><dl class="a-meta-list"><div><dt>Exit criteria</dt><dd>Six counts equal; EXCEPT diffs 0 both ways; raw AOV mismatches 0.</dd></div></dl></div></article>
+  <article class="a-phase"><div class="a-phase__index">05</div><div><div class="a-phase__head"><h3 class="a-phase__title">Sign off report parity</h3><span class="a-status" data-state="at-risk">Open</span></div><p class="a-prose">Agree one percentile definition (exact <code>percentile</code>) on both engines, regenerate report 22, add median/ranking check to the recon suite.</p></div></article>
+</section>

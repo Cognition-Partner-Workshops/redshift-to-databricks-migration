@@ -1,0 +1,602 @@
+{
+  "datasets": [
+    {
+      "name": "ds_order_kpis",
+      "displayName": "Order KPIs",
+      "queryLines": [
+        "SELECT COUNT(*) AS orders, SUM(order_total) AS gross_revenue ",
+        "FROM trino_migration_demo.core.orders ",
+        "WHERE order_status <> 'CANCELLED'"
+      ]
+    },
+    {
+      "name": "ds_ltv_kpis",
+      "displayName": "Customer LTV KPIs",
+      "queryLines": [
+        "SELECT COUNT(*) AS active_customers, AVG(lifetime_revenue) AS avg_ltv ",
+        "FROM customer_ltv"
+      ]
+    },
+    {
+      "name": "ds_daily_revenue",
+      "displayName": "Daily Revenue",
+      "queryLines": [
+        "SELECT CAST(order_date AS DATE) AS order_date, promo_group, gross_revenue ",
+        "FROM daily_revenue ",
+        "ORDER BY order_date, promo_group"
+      ]
+    },
+    {
+      "name": "ds_region_revenue",
+      "displayName": "Revenue by Region",
+      "queryLines": [
+        "SELECT region, lifetime_revenue ",
+        "FROM customer_ltv ",
+        "ORDER BY lifetime_revenue DESC"
+      ]
+    },
+    {
+      "name": "ds_promo_aov",
+      "displayName": "Average Order Value by Promo",
+      "queryLines": [
+        "SELECT element_at(attrs, 'promo') AS promo, order_total ",
+        "FROM trino_migration_demo.core.orders ",
+        "WHERE order_status <> 'CANCELLED' ",
+        "ORDER BY promo"
+      ]
+    },
+    {
+      "name": "ds_reconciliation",
+      "displayName": "Trino Snapshot vs Databricks",
+      "queryLines": [
+        "SELECT object, metric, trino, databricks, IF(trino = databricks, 'MATCH', 'MISMATCH') AS status ",
+        "FROM ( ",
+        "SELECT 'mart.daily_revenue' AS object, 'rows' AS metric, ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.trino_src.mart_daily_revenue) AS trino, ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.mart.daily_revenue) AS databricks ",
+        "UNION ALL SELECT 'mart.daily_revenue','sum gross_revenue', ",
+        "       (SELECT SUM(gross_revenue) FROM trino_migration_demo.trino_src.mart_daily_revenue), ",
+        "       (SELECT SUM(gross_revenue) FROM trino_migration_demo.mart.daily_revenue) ",
+        "UNION ALL SELECT 'mart.daily_revenue','sum order_count', ",
+        "       (SELECT SUM(order_count) FROM trino_migration_demo.trino_src.mart_daily_revenue), ",
+        "       (SELECT SUM(order_count) FROM trino_migration_demo.mart.daily_revenue) ",
+        "UNION ALL SELECT 'mart.customer_ltv','rows', ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.trino_src.mart_customer_ltv), ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.mart.customer_ltv) ",
+        "UNION ALL SELECT 'mart.customer_ltv','sum lifetime_revenue', ",
+        "       (SELECT SUM(lifetime_revenue) FROM trino_migration_demo.trino_src.mart_customer_ltv), ",
+        "       (SELECT SUM(lifetime_revenue) FROM trino_migration_demo.mart.customer_ltv) ",
+        "UNION ALL SELECT 'mart.customer_ltv','sum active_days', ",
+        "       (SELECT SUM(active_days) FROM trino_migration_demo.trino_src.mart_customer_ltv), ",
+        "       (SELECT SUM(active_days) FROM trino_migration_demo.mart.customer_ltv) ",
+        "UNION ALL SELECT 'core.orders','rows', ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.trino_src.core_orders), ",
+        "       (SELECT COUNT(*) FROM trino_migration_demo.core.orders) ",
+        ") reconciliation"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "overview",
+      "displayName": "Overview",
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1",
+      "layout": [
+        {
+          "widget": {
+            "name": "orders-counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_order_kpis",
+                  "fields": [
+                    {
+                      "name": "orders",
+                      "expression": "`orders`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "orders",
+                  "displayName": "Orders",
+                  "format": {
+                    "type": "number",
+                    "abbreviation": "compact"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Orders"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "gross-revenue-counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_order_kpis",
+                  "fields": [
+                    {
+                      "name": "gross_revenue",
+                      "expression": "`gross_revenue`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "gross_revenue",
+                  "displayName": "Gross Revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Gross Revenue"
+              }
+            }
+          },
+          "position": {
+            "x": 3,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "active-customers-counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_ltv_kpis",
+                  "fields": [
+                    {
+                      "name": "active_customers",
+                      "expression": "`active_customers`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "active_customers",
+                  "displayName": "Active Customers",
+                  "format": {
+                    "type": "number",
+                    "abbreviation": "compact"
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Active Customers"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "avg-ltv-counter",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_ltv_kpis",
+                  "fields": [
+                    {
+                      "name": "avg_ltv",
+                      "expression": "`avg_ltv`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "avg_ltv",
+                  "displayName": "Average LTV",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Average LTV"
+              }
+            }
+          },
+          "position": {
+            "x": 9,
+            "y": 0,
+            "width": 3,
+            "height": 3
+          }
+        },
+        {
+          "widget": {
+            "name": "daily-revenue-line",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_daily_revenue",
+                  "fields": [
+                    {
+                      "name": "order_date",
+                      "expression": "`order_date`"
+                    },
+                    {
+                      "name": "sum(gross_revenue)",
+                      "expression": "SUM(`gross_revenue`)"
+                    },
+                    {
+                      "name": "promo_group",
+                      "expression": "`promo_group`"
+                    }
+                  ],
+                  "disaggregated": false,
+                  "orders": [
+                    {
+                      "direction": "ASC",
+                      "expression": "`order_date`"
+                    }
+                  ]
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "order_date",
+                  "scale": {
+                    "type": "temporal"
+                  },
+                  "displayName": "Order Date"
+                },
+                "y": {
+                  "fieldName": "sum(gross_revenue)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Gross Revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                },
+                "color": {
+                  "fieldName": "promo_group",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Promo Group"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Daily Gross Revenue by Promo Group"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 12,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "region-revenue-bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_region_revenue",
+                  "fields": [
+                    {
+                      "name": "region",
+                      "expression": "`region`"
+                    },
+                    {
+                      "name": "sum(lifetime_revenue)",
+                      "expression": "SUM(`lifetime_revenue`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "sum(lifetime_revenue)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Lifetime Revenue",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "abbreviation": "compact",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "region",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Region"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Lifetime Revenue by Region"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 9,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "promo-aov-bar",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_promo_aov",
+                  "fields": [
+                    {
+                      "name": "promo",
+                      "expression": "`promo`"
+                    },
+                    {
+                      "name": "avg(order_total)",
+                      "expression": "AVG(`order_total`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "avg(order_total)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "displayName": "Average Order Value",
+                  "format": {
+                    "type": "number-currency",
+                    "currencyCode": "USD",
+                    "decimalPlaces": {
+                      "type": "max",
+                      "places": 2
+                    }
+                  }
+                },
+                "y": {
+                  "fieldName": "promo",
+                  "scale": {
+                    "type": "categorical"
+                  },
+                  "displayName": "Promo"
+                }
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Average Order Value by Promo"
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 9,
+            "width": 6,
+            "height": 6
+          }
+        },
+        {
+          "widget": {
+            "name": "reconciliation-table",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "ds_reconciliation",
+                  "fields": [
+                    {
+                      "name": "object",
+                      "expression": "`object`"
+                    },
+                    {
+                      "name": "metric",
+                      "expression": "`metric`"
+                    },
+                    {
+                      "name": "trino",
+                      "expression": "`trino`"
+                    },
+                    {
+                      "name": "databricks",
+                      "expression": "`databricks`"
+                    },
+                    {
+                      "name": "status",
+                      "expression": "`status`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "widgetType": "table",
+              "encodings": {
+                "columns": [
+                  {
+                    "fieldName": "object",
+                    "displayName": "Object"
+                  },
+                  {
+                    "fieldName": "metric",
+                    "displayName": "Metric"
+                  },
+                  {
+                    "fieldName": "trino",
+                    "displayName": "Trino"
+                  },
+                  {
+                    "fieldName": "databricks",
+                    "displayName": "Databricks"
+                  },
+                  {
+                    "fieldName": "status",
+                    "displayName": "Status"
+                  }
+                ]
+              },
+              "frame": {
+                "showTitle": true,
+                "title": "Reconciliation: Trino snapshot vs Databricks"
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 15,
+            "width": 12,
+            "height": 7
+          }
+        },
+        {
+          "widget": {
+            "name": "reconciliation-note",
+            "multilineTextboxSpec": {
+              "lines": [
+                "All mart rows reconcile after fixing two semantic divergences: Trino date_diff (elapsed 24h) vs Spark DATEDIFF (calendar days), and decimal division scale. Report 22 medians remain an open item (approximate percentile estimators differ by engine)."
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 22,
+            "width": 12,
+            "height": 2
+          }
+        }
+      ]
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#F7FAFC",
+        "dark": "#1C2330"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#222B3A"
+      },
+      "widgetBorderColor": {
+        "light": "#FFFFFF",
+        "dark": "#222B3A"
+      },
+      "fontColor": {
+        "light": "#17202A",
+        "dark": "#EDF2F7"
+      },
+      "selectionColor": {
+        "light": "#2272B4",
+        "dark": "#8ACAFF"
+      },
+      "visualizationColors": [
+        "#440154",
+        "#3B528B",
+        "#21918C",
+        "#5EC962",
+        "#FDE725"
+      ],
+      "widgetHeaderAlignment": "LEFT"
+    }
+  }
+}
