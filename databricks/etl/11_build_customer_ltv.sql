@@ -5,10 +5,12 @@
 --   sum(DECIMAL(12,2))                 -> cast back to DECIMAL(38,2)
 --   array_agg(DISTINCT tag ORDER BY t) -> array_sort(collect_set(tag))
 --   arbitrary(region)                  -> any_value(region)
---   date_diff('day', a, b)             -> floor of the elapsed interval in whole days.
---       Trino counts complete 24h intervals between the two timestamps, while Spark's
---       datediff() counts calendar-date boundaries, which is one higher whenever the
---       later timestamp's time-of-day precedes the earlier one's (97 of 150 rows here).
+--   date_diff('day', a, b)             -> timestampdiff(DAY, a, b), which truncates to
+--       whole elapsed days the way Trino does. Spark's datediff() counts calendar-date
+--       boundaries instead and is one higher whenever the later timestamp's time-of-day
+--       precedes the earlier one's (97 of 150 rows here). timestampdiff keeps wall-clock
+--       arithmetic on TIMESTAMP_NTZ, so a DST transition inside the interval cannot add
+--       or drop an hour the way an epoch-microsecond subtraction would.
 --   format_datetime(ts, 'yyyy-MM')     -> date_format(ts, 'yyyy-MM')
 --   CAST(ARRAY[] AS ARRAY(VARCHAR))    -> CAST(array() AS ARRAY<STRING>)
 -- The table is declared before the insert so customer_code/region keep CHAR types - a
@@ -56,9 +58,7 @@ SELECT
     o.lifetime_orders,
     o.lifetime_revenue,
     o.avg_order_value,
-    CAST(floor(
-        (unix_micros(o.last_order_ts) - unix_micros(o.first_order_ts)) / 86400000000
-    ) AS BIGINT)                                               AS active_days,
+    CAST(timestampdiff(DAY, o.first_order_ts, o.last_order_ts) AS BIGINT) AS active_days,
     date_format(o.first_order_ts, 'yyyy-MM')                   AS first_order_month,
     coalesce(t.tags, CAST(array() AS ARRAY<STRING>))           AS tags
 FROM trino_migration_demo_run4.ops.customers c

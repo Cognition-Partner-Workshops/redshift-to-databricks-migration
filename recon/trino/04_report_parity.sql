@@ -39,11 +39,15 @@ dbx_21 AS (
   WHERE order_date >= date_sub(current_date(), 30)
   GROUP BY order_date, promo_group
 )
+-- Per-grain mismatch counts and max absolute deltas, not signed totals: a grain that is
+-- too high and one that is too low would cancel each other out in a SUM.
 SELECT 'report_21_channel_trend' AS report,
        count(*)                                                   AS rows_compared,
        sum(CASE WHEN t.order_date IS NULL OR d.order_date IS NULL THEN 1 ELSE 0 END) AS unmatched_rows,
-       sum(coalesce(d.revenue, 0) - coalesce(t.revenue, 0))       AS total_revenue_delta,
-       sum(coalesce(d.orders, 0)  - coalesce(t.orders, 0))        AS total_orders_delta
+       sum(CASE WHEN NOT (d.revenue <=> t.revenue) THEN 1 ELSE 0 END) AS revenue_mismatched_rows,
+       sum(CASE WHEN NOT (d.orders  <=> t.orders)  THEN 1 ELSE 0 END) AS orders_mismatched_rows,
+       max(abs(coalesce(d.revenue, 0) - coalesce(t.revenue, 0)))  AS max_abs_revenue_delta,
+       max(abs(coalesce(d.orders, 0)  - coalesce(t.orders, 0)))   AS max_abs_orders_delta
 FROM trino_21 t FULL OUTER JOIN dbx_21 d USING (order_date, promo_group);
 
 -- Report 22 - promo lift. Source table is shared, so orders / average_order_total must

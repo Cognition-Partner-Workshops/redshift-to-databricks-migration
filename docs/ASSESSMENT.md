@@ -36,7 +36,7 @@ Everything below is a change in the Databricks SQL only. No file under `trino/` 
 
 - `approx_distinct(order_id)` to `COUNT(DISTINCT order_id)`
 - `element_at(attrs, 'promo')` to `attrs['promo']`
-- `date_diff('day', a, b)` to `floor((unix_micros(b) - unix_micros(a)) / 86400000000)`
+- `date_diff('day', a, b)` to `timestampdiff(DAY, a, b)` (not `datediff`)
 - `array_agg(DISTINCT tag ORDER BY tag)` to `array_sort(collect_set(tag))`
 - `arbitrary(x)` to `any_value(x)`
 - `format_datetime(ts, 'yyyy-MM')` to `date_format(ts, 'yyyy-MM')`

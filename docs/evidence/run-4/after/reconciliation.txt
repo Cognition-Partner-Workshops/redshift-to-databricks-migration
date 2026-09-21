@@ -40,8 +40,8 @@ report_20_region_topline	EAST	0	0.00	0.00	0
 report_20_region_topline	SOUT	0	0.00	0.00	0
 report_20_region_topline	WEST	0	0.00	0.00	0
 ---
-report	rows_compared	unmatched_rows	total_revenue_delta	total_orders_delta
-report_21_channel_trend	60	0	0.00	0
+report	rows_compared	unmatched_rows	revenue_mismatched_rows	orders_mismatched_rows	max_abs_revenue_delta	max_abs_orders_delta
+report_21_channel_trend	60	0	0	0	0.00	0
 ---
 report	grain	d_orders	d_average_order_total	dbx_approx_median	dbx_exact_median
 report_22_promo_lift	LOYALTY5	0	0.00	349.87	350.13
