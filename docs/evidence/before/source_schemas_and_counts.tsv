@@ -1,0 +1,65 @@
+== lake.core.orders
+Column	Type	Extra	Comment
+order_id	bigint		
+customer_id	integer		
+order_ts	timestamp(3)		
+order_status	varchar		
+order_total	decimal(12,2)		
+sales_channel	varchar		
+attrs	map(varchar, varchar)		
+order_date	date	partition key	
+row_count
+5000
+== lake.core.order_items
+Column	Type	Extra	Comment
+order_item_id	bigint		
+order_id	bigint		
+sku	varchar		
+quantity	smallint		
+unit_price	decimal(10,2)		
+discount_pct	decimal(5,4)		
+row_count
+12000
+== ops.public.customers
+Column	Type	Extra	Comment
+customer_id	integer		
+customer_code	char(12)		
+full_name	varchar(120)		
+email	varchar(160)		
+region	char(4)		
+signup_date	date		
+is_active	boolean		
+created_at	timestamp(6)		
+row_count
+200
+== ops.public.customer_tags
+Column	Type	Extra	Comment
+customer_id	integer		
+tag	varchar		
+row_count
+401
+== lake.mart.daily_revenue
+Column	Type	Extra	Comment
+order_date	timestamp(3)		
+region	char(4)		
+promo_group	varchar(11)		
+order_count	bigint		
+gross_revenue	decimal(38,2)		
+avg_order_value	decimal(38,6)		
+row_count
+360
+== lake.mart.customer_ltv
+Column	Type	Extra	Comment
+customer_id	integer		
+customer_code	char(12)		
+region	char(4)		
+first_order_ts	timestamp(3)		
+last_order_ts	timestamp(3)		
+lifetime_orders	bigint		
+lifetime_revenue	decimal(38,2)		
+avg_order_value	decimal(12,2)		
+active_days	bigint		
+first_order_month	varchar		
+tags	array(varchar)		
+row_count
+150

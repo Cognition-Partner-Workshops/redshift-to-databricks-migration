@@ -1,0 +1,8 @@
+tbl	databricks_rows	trino_rows	diff
+core.order_items	12000	12000	0
+core.orders	5000	5000	0
+mart.customer_ltv (rebuilt)	150	150	0
+mart.daily_revenue (rebuilt)	360	360	0
+ops.customer_tags	401	401	0
+ops.customers	200	200	0
+--- 6 rows

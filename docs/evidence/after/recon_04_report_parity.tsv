@@ -1,0 +1,14 @@
+report	check	databricks	trino
+20_region_topline	databricks EXCEPT trino	0	0
+20_region_topline	rows	3	3
+20_region_topline	trino EXCEPT databricks	0	0
+21_channel_trend	databricks EXCEPT trino	0	0
+21_channel_trend	rows	60	60
+21_channel_trend	trino EXCEPT databricks	0	0
+--- 6 rows
+promo	orders	exact_orders	median_order_total	lower_middle	upper_middle	median_is_a_true_middle_value	avg_diff
+NONE	1250	1250	350.00	350.00	350.52	true	0.000000
+LOYALTY5	1250	1250	349.87	349.87	350.39	true	0.000000
+SPRING15	1250	1250	349.74	349.74	350.26	true	0.000000
+WELCOME10	1250	1250	349.61	349.61	350.13	true	0.000000
+--- 4 rows

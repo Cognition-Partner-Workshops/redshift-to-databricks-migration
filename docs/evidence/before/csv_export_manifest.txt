@@ -1,0 +1,13 @@
+196f9ea38ff276c78b5924bb6adf3e4c  core_order_items.csv
+dacd5a8b752fde7883e9bf995ed65e66  core_orders.csv
+04f2ae10d33a925d9ed5caf3fd67ad2a  mart_customer_ltv.csv
+0b1c5dd59fda13b1b0ab92ca86b683f9  mart_daily_revenue.csv
+58925ab0151dd56344dbada7be90066f  ops_customer_tags.csv
+610ef16dc20a114f0ed7233d5453fb44  ops_customers.csv
+  12001 core_order_items.csv
+   5001 core_orders.csv
+    151 mart_customer_ltv.csv
+    361 mart_daily_revenue.csv
+    402 ops_customer_tags.csv
+    201 ops_customers.csv
+  18117 total

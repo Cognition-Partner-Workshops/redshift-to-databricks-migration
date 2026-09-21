@@ -1,0 +1,7 @@
+customer_id	customer_code	region	first_order_ts	last_order_ts	lifetime_orders	lifetime_revenue	avg_order_value	active_days	first_order_month	tags
+1	CUST00000001	WEST	2026-05-26T11:47:21.544Z	2026-09-21T16:27:21.544Z	25	8428.25	337.13	118	2026-05	["loyalty","seasonal"]
+2	CUST00000002	EAST	2026-05-26T11:10:21.544Z	2026-09-21T15:50:21.544Z	25	8431.50	337.26	118	2026-05	["email","mobile","staff"]
+4	CUST00000004	SOUT	2026-05-26T09:56:21.544Z	2026-09-21T14:36:21.544Z	25	8438.00	337.52	118	2026-05	["priority","vip"]
+5	CUST00000005	WEST	2026-05-26T09:19:21.544Z	2026-09-21T13:59:21.544Z	25	8441.25	337.65	118	2026-05	["loyalty","referral","seasonal"]
+6	CUST00000006	EAST	2026-05-26T08:42:21.544Z	2026-09-21T13:22:21.544Z	25	8444.50	337.78	118	2026-05	["mobile"]
+--- 5 rows

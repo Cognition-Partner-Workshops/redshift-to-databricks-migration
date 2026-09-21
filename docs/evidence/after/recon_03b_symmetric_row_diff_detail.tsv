@@ -1,0 +1,4 @@
+side	customer_id	customer_code	region	first_order_ts	last_order_ts	lifetime_orders	lifetime_revenue	avg_order_value	active_days	first_order_month	tags
+--- 0 rows
+side	order_date	region	promo_group	order_count	gross_revenue	avg_order_value
+--- 0 rows

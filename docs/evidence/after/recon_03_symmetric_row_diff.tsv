@@ -1,0 +1,14 @@
+tbl	direction	rows
+core.order_items	databricks EXCEPT trino	0
+core.order_items	trino EXCEPT databricks	0
+core.orders	databricks EXCEPT trino	0
+core.orders	trino EXCEPT databricks	0
+mart.customer_ltv	databricks EXCEPT trino	0
+mart.customer_ltv	trino EXCEPT databricks	0
+mart.daily_revenue	databricks EXCEPT trino	0
+mart.daily_revenue	trino EXCEPT databricks	0
+ops.customer_tags	databricks EXCEPT trino	0
+ops.customer_tags	trino EXCEPT databricks	0
+ops.customers	databricks EXCEPT trino	0
+ops.customers	trino EXCEPT databricks	0
+--- 12 rows
