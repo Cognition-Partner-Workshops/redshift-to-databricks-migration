@@ -21,3 +21,4 @@ SQL estate for our order-analytics warehouse on Amazon Redshift Serverless
 ## Other estates
 
 - [Order analytics on Trino](trino/README.md)
+- `databricks/` — converted SQL and snapshot-load scripts for the Trino estate
