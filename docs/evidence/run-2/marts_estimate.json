@@ -1,0 +1,25 @@
+{
+  "mode": "snapshot",
+  "depth": "full",
+  "tier3_mode": {
+    "trino_migration_demo.trino_src.mart_daily_revenue": "full_diff",
+    "trino_migration_demo.trino_src.mart_customer_ltv": "full_diff"
+  },
+  "source_statements": {
+    "tier1": 2,
+    "tier2": 2,
+    "tier3": 6,
+    "tier4": 0,
+    "total": 10
+  },
+  "target_statements": {
+    "tier1": 2,
+    "tier2": 2,
+    "tier3": 4,
+    "tier4": 0,
+    "total": 8
+  },
+  "source_rows_fetched": null,
+  "target_rows_fetched": null,
+  "row_counts_known": false
+}

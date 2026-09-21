@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "/usr/lib/python3.10/runpy.py", line 196, in _run_module_as_main
+    return _run_code(code, main_globals, None,
+  File "/usr/lib/python3.10/runpy.py", line 86, in _run_code
+    exec(code, run_globals)
+  File "/home/ubuntu/repos/dbx-migration-plugin/skills/data-reconciliation/harness/recon/cli.py", line 580, in <module>
+    sys.exit(main())
+  File "/home/ubuntu/repos/dbx-migration-plugin/skills/data-reconciliation/harness/recon/cli.py", line 514, in main
+    source = SOURCE_ADAPTERS[args.family](args.source_dsn_secret)
+  File "/home/ubuntu/repos/dbx-migration-plugin/skills/data-reconciliation/harness/recon/adapters.py", line 1926, in __init__
+    super().__init__(psycopg.connect(_secret(dsn_secret)))
+  File "/home/ubuntu/repos/dbx-migration-plugin/skills/data-reconciliation/harness/recon/adapters.py", line 301, in _secret
+    raise RuntimeError(f"secret '{name}' not found in environment; pass secrets by name only")
+RuntimeError: secret 'TRINO_OPS_DSN' not found in environment; pass secrets by name only
