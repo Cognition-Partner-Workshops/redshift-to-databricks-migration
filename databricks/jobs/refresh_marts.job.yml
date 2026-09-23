@@ -1,0 +1,43 @@
+# Nightly mart refresh. Replaces sql/etl/12_sp_refresh_marts.sql (plpgsql
+# mart.sp_refresh_marts), which only logged; the real 10_* -> 11_* ordering lived
+# in the scheduler's file names. Here the order is the task DAG:
+#
+#   load_enriched_orders (silver)
+#       |-- build_daily_revenue (gold)
+#       |-- build_customer_ltv  (gold)
+#
+# The two gold builds read only silver, so they run in parallel; a failing task
+# stops its dependents and fails the run. Redshift ran the marts nightly; the
+# recon job (redshift-migration-nightly-recon) runs at 06:00 UTC, so this
+# finishes well before it.
+resources:
+  jobs:
+    refresh_marts:
+      name: order-analytics-refresh-marts
+      description: Silver enriched_orders incremental load, then gold daily_revenue and customer_ltv
+      schedule:
+        quartz_cron_expression: "0 0 2 * * ?"
+        timezone_id: UTC
+        pause_status: UNPAUSED
+      max_concurrent_runs: 1
+      timeout_seconds: 3600
+      tasks:
+        - task_key: load_enriched_orders
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../silver/05_load_enriched_orders.sql
+        - task_key: build_daily_revenue
+          depends_on:
+            - task_key: load_enriched_orders
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../etl/10_build_daily_revenue.sql
+        - task_key: build_customer_ltv
+          depends_on:
+            - task_key: load_enriched_orders
+          sql_task:
+            warehouse_id: ${var.warehouse_id}
+            file:
+              path: ../etl/11_build_customer_ltv.sql

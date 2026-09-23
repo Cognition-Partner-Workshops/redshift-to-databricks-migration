@@ -1,0 +1,23 @@
+# Databricks Asset Bundle for the order-analytics warehouse.
+#   databricks bundle validate
+#   databricks bundle deploy -t dev
+#   databricks bundle run refresh_marts -t dev
+bundle:
+  name: order-analytics-warehouse
+
+include:
+  - databricks/jobs/*.job.yml
+
+variables:
+  warehouse_id:
+    description: Serverless SQL warehouse that runs the SQL tasks
+    default: 565cd2fd713738c4
+
+targets:
+  dev:
+    mode: development
+    default: true
+  prod:
+    mode: production
+    workspace:
+      root_path: /Workspace/Shared/.bundle/${bundle.name}/${bundle.target}
