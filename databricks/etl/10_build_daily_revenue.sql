@@ -3,7 +3,7 @@
 --
 -- The join, cancelled filter, TRUNC(order_ts) and DECODE now live in
 -- silver.enriched_orders. What remains here is the daily grain, the
--- "completed days only" cut (order_ts < TRUNC(GETDATE()) -> order_date < current_date();
+-- "completed days only" cut (order_ts < TRUNC(GETDATE()) -> order_date < current_date(),
 -- the warehouse runs in UTC like Redshift), and the canonical avg_order_value at
 -- 4 decimals (Redshift published this mart's AOV as DECIMAL(38,4)).
 --
