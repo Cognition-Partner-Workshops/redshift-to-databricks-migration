@@ -1,0 +1,107 @@
+# https://docs.devin.ai/onboard-devin/environment-yaml
+# One-time setup (e.g., install system tools, global CLIs).
+initialize: |
+  sudo apt-get install -y -q postgresql-client
+  cat > ~/dbx_sql.py <<'PYEOF'
+  #!/usr/bin/env python3
+  """Run SQL on Databricks SQL warehouse via Statement Execution API.
+  Usage: dbx_sql.py <file.sql | SQL string>"""
+  import os, sys, time, json, requests
+
+  HOST = os.environ["DATABRICKS_DEMO_HOST"].rstrip("/")
+  TOKEN = os.environ["DATABRICKS_DEMO_TOKEN"]
+  WAREHOUSE = "565cd2fd713738c4"
+  H = {"Authorization": f"Bearer {TOKEN}"}
+
+  def run(sql):
+      r = requests.post(f"{HOST}/api/2.0/sql/statements", headers=H, json={
+          "warehouse_id": WAREHOUSE, "statement": sql, "wait_timeout": "50s"})
+      r.raise_for_status()
+      d = r.json()
+      sid = d["statement_id"]
+      while d["status"]["state"] in ("PENDING", "RUNNING"):
+          time.sleep(2)
+          d = requests.get(f"{HOST}/api/2.0/sql/statements/{sid}", headers=H).json()
+      if d["status"]["state"] != "SUCCEEDED":
+          print(json.dumps(d["status"], indent=2))
+          sys.exit(1)
+      res = d.get("result", {})
+      cols = [c["name"] for c in d.get("manifest", {}).get("schema", {}).get("columns", [])]
+      if cols:
+          print("\t".join(cols))
+      for row in res.get("data_array", []) or []:
+          print("\t".join("" if v is None else str(v) for v in row))
+
+  if __name__ == "__main__":
+      arg = sys.argv[1]
+      text = open(arg).read() if os.path.exists(arg) else arg
+      stmts = [s.strip() for s in text.split(";") if s.strip()]
+      for s in stmts:
+          run(s)
+          print("---")
+  PYEOF
+  cat > ~/rs_sql.py <<'PYEOF'
+  #!/usr/bin/env python3
+  """Run SQL on Redshift Serverless via Data API. Usage: rs_sql.py <file.sql | SQL string>"""
+  import os, sys, time, boto3
+
+  c = boto3.client("redshift-data", region_name="us-east-1",
+                   aws_access_key_id=os.environ["AWS_DEMO_ACCESS_KEY_ID"],
+                   aws_secret_access_key=os.environ["AWS_DEMO_SECRET_ACCESS_KEY"])
+
+  def run(sql):
+      r = c.execute_statement(WorkgroupName="demo-wg", Database="demo", Sql=sql)
+      sid = r["Id"]
+      while True:
+          d = c.describe_statement(Id=sid)
+          if d["Status"] in ("FINISHED", "FAILED", "ABORTED"):
+              break
+          time.sleep(1)
+      if d["Status"] != "FINISHED":
+          print(d.get("Error"))
+          sys.exit(1)
+      if d.get("HasResultSet"):
+          res = c.get_statement_result(Id=sid)
+          cols = [m["name"] for m in res["ColumnMetadata"]]
+          print("\t".join(cols))
+          for row in res["Records"]:
+              print("\t".join(str(list(v.values())[0]) if not v.get("isNull") else "" for v in row))
+
+  if __name__ == "__main__":
+      arg = sys.argv[1]
+      text = open(arg).read() if os.path.exists(arg) else arg
+      stmts = [s.strip() for s in text.split(";") if s.strip()]
+      for s in stmts:
+          run(s)
+          print("---")
+  PYEOF
+# Install project dependencies (runs during builds, surfaced to agent at session start).
+maintenance: |
+  pip install boto3 requests redshift_connector
+knowledge:
+  - name: redshift-access
+    contents: |
+      # Redshift Serverless: workgroup demo-wg, db demo, us-east-1.
+      # Preferred: Redshift Data API with $AWS_DEMO_ACCESS_KEY_ID/$AWS_DEMO_SECRET_ACCESS_KEY
+      # (DB user "IAM:devin-redshift-demo" has USAGE/SELECT on schemas core and mart).
+      # CAUTION: devin-redshift-demo can DROP but NOT CREATE tables in schema mart —
+      # run Redshift mart rebuilds (sql/etl/*) as demoadmin (psql or redshift_connector).
+      # Admin fallback:
+      # PGPASSWORD=$REDSHIFT_DEMO_ADMIN_PASSWORD psql -h demo-wg.599083837640.us-east-1.redshift-serverless.amazonaws.com -p 5439 -U demoadmin -d demo
+  - name: databricks-access
+    contents: |
+      # Databricks: $DATABRICKS_DEMO_HOST + $DATABRICKS_DEMO_TOKEN, SQL via
+      # Statement Execution API on warehouse 565cd2fd713738c4 ('Serverless Starter Warehouse').
+      # Federation: connection redshift_demo, foreign catalog redshift_src; UC catalog migration_demo.
+  - name: verify
+    contents: |
+      # python scripts/verify_backfill.py  (needs REDSHIFT_DEMO_ADMIN_PASSWORD, DATABRICKS_DEMO_HOST/TOKEN)
+  - name: demo-layout
+    contents: |
+      # main = pristine pre-migration "customer" estate (tag: baseline). Never merge migration/demo PRs into main.
+      # Migration sessions branch from and PR into migration-run-N branches.
+      # demo-ops branch = operator kit: talk track, session prompts, seed/drift scripts, recon job assets (recon/job/).
+      # Databricks job "redshift-migration-nightly-recon" (id 220238957207364) runs recon_check.sql nightly 06:00 UTC
+      # on warehouse 565cd2fd713738c4; on failure its notify_devin task POSTs to Devin automation
+      # "Redshift migration recon failure — auto-remediate" (webhook secret in Databricks scope
+      # redshift_migration/devin_webhook_secret).
