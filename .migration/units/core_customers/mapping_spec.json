@@ -1,0 +1,87 @@
+{
+  "version": "map-order-analytics-core_customers-v1",
+  "unit": "core_customers",
+  "wave": 0,
+  "rerun_posture": "first_run_baseline",
+  "notes": [
+    "Wave-0 data-only backfill of the live table through redshift_src; no transformation.",
+    "Determinism: created_at < run_date on both sides (the feed stamps created_at with GETDATE() at load).",
+    "IDENTITY(1,1) customer_id is carried as the loaded value (no Delta identity column on backfill); continuity is wave-0 DDL work, see order_analytics_analysis.md \u00a75."
+  ],
+  "objects": [
+    {
+      "object": "migration_demo.core.customers",
+      "root_table": "core.customers",
+      "key": {
+        "source": [
+          "customer_id"
+        ],
+        "target": "customer_id"
+      },
+      "scope_columns": [
+        "created_at"
+      ],
+      "root_where": "created_at < TIMESTAMP '${run_date}'",
+      "target_where": "created_at < TIMESTAMP '${run_date}'",
+      "fields": [
+        {
+          "source": "customer_id",
+          "target": "customer_id",
+          "source_type": "INTEGER",
+          "target_type": "INT"
+        },
+        {
+          "source": "customer_code",
+          "target": "customer_code",
+          "source_type": "CHAR(12)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "full_name",
+          "target": "full_name",
+          "source_type": "VARCHAR(120)",
+          "target_type": "STRING"
+        },
+        {
+          "source": "email",
+          "target": "email",
+          "source_type": "VARCHAR(160)",
+          "target_type": "STRING"
+        },
+        {
+          "source": "region",
+          "target": "region",
+          "source_type": "CHAR(4)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "signup_date",
+          "target": "signup_date",
+          "source_type": "DATE",
+          "target_type": "DATE"
+        },
+        {
+          "source": "is_active",
+          "target": "is_active",
+          "source_type": "BOOLEAN",
+          "target_type": "BOOLEAN"
+        },
+        {
+          "source": "created_at",
+          "target": "created_at",
+          "source_type": "TIMESTAMP",
+          "target_type": "TIMESTAMP",
+          "rules": [
+            "datetime_utc_truncate_ms"
+          ]
+        }
+      ]
+    }
+  ]
+}

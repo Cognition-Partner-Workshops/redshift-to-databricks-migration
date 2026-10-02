@@ -1,0 +1,70 @@
+{
+  "version": "map-order-analytics-core_order_items-v1",
+  "unit": "core_order_items",
+  "wave": 0,
+  "rerun_posture": "first_run_baseline",
+  "notes": [
+    "Data-only: no downstream modelling reads this table (inventory P1/P2 lineage).",
+    "No load timestamp column: determinism is the idle feed (FACT in the inventory window) plus the live window; run_date is recorded on the run but pins no predicate.",
+    "discount_pct DECIMAL(5,4) keeps scale 4; decimal_round(half_even,10) is a no-op at this scale."
+  ],
+  "objects": [
+    {
+      "object": "migration_demo.core.order_items",
+      "root_table": "core.order_items",
+      "key": {
+        "source": [
+          "order_item_id"
+        ],
+        "target": "order_item_id"
+      },
+      "fields": [
+        {
+          "source": "order_item_id",
+          "target": "order_item_id",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        },
+        {
+          "source": "order_id",
+          "target": "order_id",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        },
+        {
+          "source": "sku",
+          "target": "sku",
+          "source_type": "CHAR(16)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "quantity",
+          "target": "quantity",
+          "source_type": "SMALLINT",
+          "target_type": "SMALLINT"
+        },
+        {
+          "source": "unit_price",
+          "target": "unit_price",
+          "source_type": "DECIMAL(10,2)",
+          "target_type": "DECIMAL(10,2)",
+          "rules": [
+            "decimal_round"
+          ]
+        },
+        {
+          "source": "discount_pct",
+          "target": "discount_pct",
+          "source_type": "DECIMAL(5,4)",
+          "target_type": "DECIMAL(5,4)",
+          "rules": [
+            "decimal_round"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,26 @@
+{
+  "unit": "core_orders",
+  "wave": 0,
+  "dialect": "redshift",
+  "routines": [
+    {
+      "routine": "backfill.core.orders",
+      "kind": "wave-0 data backfill (CTAS from federation, no legacy SQL)",
+      "reads": [
+        "redshift_src.core.orders"
+      ],
+      "writes": [
+        "core.orders"
+      ],
+      "calls": []
+    }
+  ],
+  "consumers": [
+    "sql/etl/10_build_daily_revenue.sql (mart_daily_revenue)",
+    "sql/etl/11_build_customer_ltv.sql (mart_customer_ltv)"
+  ],
+  "crossings": [
+    "D2 shared object: read by both mart builds -> wave 0",
+    "D3 external feed (idle since 2026-09-18; drift_loader.py drift expected later)"
+  ]
+}

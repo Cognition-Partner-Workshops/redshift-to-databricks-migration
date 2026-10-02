@@ -1,0 +1,84 @@
+{
+  "version": "map-order-analytics-core_orders-v1",
+  "unit": "core_orders",
+  "wave": 0,
+  "rerun_posture": "first_run_baseline",
+  "notes": [
+    "Wave-0 data-only backfill through redshift_src.",
+    "Determinism: loaded_at < run_date on both sides; the feed's last load was 2026-09-18 16:10 UTC, so run_date=2026-09-19 pins the full table.",
+    "order_status is CHAR(10) blank-padded on Redshift ('CANCELLED  '); target stores the rtrimmed value, recon applies rstrip_spaces."
+  ],
+  "objects": [
+    {
+      "object": "migration_demo.core.orders",
+      "root_table": "core.orders",
+      "key": {
+        "source": [
+          "order_id"
+        ],
+        "target": "order_id"
+      },
+      "scope_columns": [
+        "loaded_at"
+      ],
+      "root_where": "loaded_at < TIMESTAMP '${run_date}'",
+      "target_where": "loaded_at < TIMESTAMP '${run_date}'",
+      "fields": [
+        {
+          "source": "order_id",
+          "target": "order_id",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        },
+        {
+          "source": "customer_id",
+          "target": "customer_id",
+          "source_type": "INTEGER",
+          "target_type": "INT"
+        },
+        {
+          "source": "order_ts",
+          "target": "order_ts",
+          "source_type": "TIMESTAMP",
+          "target_type": "TIMESTAMP",
+          "rules": [
+            "datetime_utc_truncate_ms"
+          ]
+        },
+        {
+          "source": "order_status",
+          "target": "order_status",
+          "source_type": "CHAR(10)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "order_total",
+          "target": "order_total",
+          "source_type": "DECIMAL(12,2)",
+          "target_type": "DECIMAL(12,2)",
+          "rules": [
+            "decimal_round"
+          ]
+        },
+        {
+          "source": "sales_channel",
+          "target": "sales_channel",
+          "source_type": "VARCHAR(20)",
+          "target_type": "STRING"
+        },
+        {
+          "source": "loaded_at",
+          "target": "loaded_at",
+          "source_type": "TIMESTAMP",
+          "target_type": "TIMESTAMP",
+          "rules": [
+            "datetime_utc_truncate_ms"
+          ]
+        }
+      ]
+    }
+  ]
+}
