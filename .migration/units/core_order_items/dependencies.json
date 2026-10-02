@@ -1,0 +1,23 @@
+{
+  "unit": "core_order_items",
+  "wave": 0,
+  "dialect": "redshift",
+  "routines": [
+    {
+      "routine": "backfill.core.order_items",
+      "kind": "wave-0 data backfill (CTAS from federation, no legacy SQL)",
+      "reads": [
+        "redshift_src.core.order_items"
+      ],
+      "writes": [
+        "core.order_items"
+      ],
+      "calls": []
+    }
+  ],
+  "consumers": [],
+  "crossings": [
+    "D3 external feed (idle; stopped before the orders feed)",
+    "no D2: nothing in scope reads it"
+  ]
+}

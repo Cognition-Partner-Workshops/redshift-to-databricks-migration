@@ -1,0 +1,37 @@
+{
+  "unit": "mart_daily_revenue",
+  "wave": 1,
+  "dialect": "redshift",
+  "routines": [
+    {
+      "routine": "sql/etl/10_build_daily_revenue.sql",
+      "kind": "nightly mart build (DROP+CTAS -> CREATE OR REPLACE TABLE)",
+      "reads": [
+        "core.orders",
+        "core.customers"
+      ],
+      "writes": [
+        "mart.daily_revenue"
+      ],
+      "calls": []
+    },
+    {
+      "routine": "sql/reports/21_channel_trend.sql",
+      "kind": "report consumer (read-only, 30-day window)",
+      "reads": [
+        "mart.daily_revenue"
+      ],
+      "writes": [],
+      "calls": []
+    }
+  ],
+  "consumers": [
+    "sql/reports/21_channel_trend.sql",
+    "dashboard readers via PUBLIC grant (D8)"
+  ],
+  "crossings": [
+    "D1 ordering: after wave 0 (reads core.orders, core.customers)",
+    "D5 scheduler step 10 (nightly_refresh sequences it in wave 3)",
+    "D8 governance: SELECT TO PUBLIC on Redshift -> UC group per d-mart-readers; CREATE OR REPLACE TABLE preserves it (F-3)"
+  ]
+}

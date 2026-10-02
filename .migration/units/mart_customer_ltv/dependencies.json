@@ -1,0 +1,37 @@
+{
+  "unit": "mart_customer_ltv",
+  "wave": 2,
+  "dialect": "redshift",
+  "routines": [
+    {
+      "routine": "sql/etl/11_build_customer_ltv.sql",
+      "kind": "nightly mart build (DROP+CTAS -> CREATE OR REPLACE TABLE)",
+      "reads": [
+        "core.customers",
+        "core.orders"
+      ],
+      "writes": [
+        "mart.customer_ltv"
+      ],
+      "calls": []
+    },
+    {
+      "routine": "sql/reports/20_region_topline.sql",
+      "kind": "report consumer (read-only)",
+      "reads": [
+        "mart.customer_ltv"
+      ],
+      "writes": [],
+      "calls": []
+    }
+  ],
+  "consumers": [
+    "sql/reports/20_region_topline.sql",
+    "dashboard readers via PUBLIC grant (D8)"
+  ],
+  "crossings": [
+    "D1 ordering: after wave 0",
+    "D5 scheduler step 11 (nightly_refresh sequences it in wave 3)",
+    "D8 governance: as mart_daily_revenue"
+  ]
+}

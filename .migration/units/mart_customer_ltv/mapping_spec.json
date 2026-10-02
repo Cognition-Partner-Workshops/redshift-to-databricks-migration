@@ -1,0 +1,101 @@
+{
+  "version": "map-order-analytics-mart_customer_ltv-v1",
+  "unit": "mart_customer_ltv",
+  "wave": 2,
+  "rerun_posture": "required",
+  "principal_map": {
+    "public": "mart_readers"
+  },
+  "notes": [
+    "Converted sql/etl/11_build_customer_ltv.sql: CREATE OR REPLACE TABLE, DATEDIFF(day,a,b)->DATEDIFF(DAY, a, b) (Databricks argument order: end minus start, same as Redshift), AVG(DECIMAL(12,2)) declared DECIMAL(38,2) to match the live Redshift result type, rtrim(order_status) <> 'CANCELLED'.",
+    "Determinism: the legacy script has no cutoff, so no row predicate is pinned; the rule is a run_date precondition on the live source: max(loaded_at) on redshift_src.core.orders < run_date, checked as the first live statement, else the run halts as nondeterministic. Adding an order_ts < run_date cutoff to the converted build is a scope decision for the plan (candidate decision, not taken here).",
+    "principal_map 'public' -> 'mart_readers' is provisional under d-mart-readers.",
+    "Consumer sql/reports/20_region_topline.sql is converted and parity-checked in this unit; it writes nothing."
+  ],
+  "objects": [
+    {
+      "object": "migration_demo.mart.customer_ltv",
+      "root_table": "mart.customer_ltv",
+      "key": {
+        "source": [
+          "customer_id"
+        ],
+        "target": "customer_id"
+      },
+      "fields": [
+        {
+          "source": "customer_id",
+          "target": "customer_id",
+          "source_type": "INTEGER",
+          "target_type": "INT"
+        },
+        {
+          "source": "customer_code",
+          "target": "customer_code",
+          "source_type": "CHAR(12)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "region",
+          "target": "region",
+          "source_type": "CHAR(4)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "first_order_ts",
+          "target": "first_order_ts",
+          "source_type": "TIMESTAMP",
+          "target_type": "TIMESTAMP",
+          "rules": [
+            "datetime_utc_truncate_ms"
+          ]
+        },
+        {
+          "source": "last_order_ts",
+          "target": "last_order_ts",
+          "source_type": "TIMESTAMP",
+          "target_type": "TIMESTAMP",
+          "rules": [
+            "datetime_utc_truncate_ms"
+          ]
+        },
+        {
+          "source": "lifetime_orders",
+          "target": "lifetime_orders",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        },
+        {
+          "source": "lifetime_revenue",
+          "target": "lifetime_revenue",
+          "source_type": "NUMERIC(38,2)",
+          "target_type": "DECIMAL(38,2)",
+          "rules": [
+            "decimal_round"
+          ]
+        },
+        {
+          "source": "avg_order_value",
+          "target": "avg_order_value",
+          "source_type": "NUMERIC(38,2)",
+          "target_type": "DECIMAL(38,2)",
+          "rules": [
+            "decimal_round"
+          ]
+        },
+        {
+          "source": "active_days",
+          "target": "active_days",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        }
+      ]
+    }
+  ]
+}

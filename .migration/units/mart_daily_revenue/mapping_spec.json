@@ -1,0 +1,86 @@
+{
+  "version": "map-order-analytics-mart_daily_revenue-v1",
+  "unit": "mart_daily_revenue",
+  "wave": 1,
+  "rerun_posture": "required",
+  "principal_map": {
+    "public": "mart_readers"
+  },
+  "notes": [
+    "Converted sql/etl/10_build_daily_revenue.sql: CREATE OR REPLACE TABLE (grant-preserving, finding F-3), TRUNC(ts)->CAST(ts AS DATE), DECODE->CASE, rtrim(order_status) <> 'CANCELLED', GETDATE() cutoff -> order_ts < :run_date.",
+    "Determinism: order_date < run_date on both sides; the legacy GETDATE() cutoff is pinned to the same as-of date (03_recon_tolerances.json).",
+    "Key includes region CHAR(4): the target stores rtrim(region) and the pilot confirms key canonicalization before wave 2 reuses the pattern.",
+    "principal_map 'public' -> 'mart_readers' is the provisional UC group name under decision d-mart-readers; replace with the selected group when the decision is recorded.",
+    "Consumer sql/reports/21_channel_trend.sql (DATEADD 30-day window) is converted and parity-checked in this unit; it writes nothing."
+  ],
+  "objects": [
+    {
+      "object": "migration_demo.mart.daily_revenue",
+      "root_table": "mart.daily_revenue",
+      "key": {
+        "source": [
+          "order_date",
+          "region",
+          "channel_group"
+        ],
+        "target": [
+          "order_date",
+          "region",
+          "channel_group"
+        ]
+      },
+      "scope_columns": [
+        "order_date"
+      ],
+      "root_where": "order_date < DATE '${run_date}'",
+      "target_where": "order_date < DATE '${run_date}'",
+      "fields": [
+        {
+          "source": "order_date",
+          "target": "order_date",
+          "source_type": "DATE",
+          "target_type": "DATE"
+        },
+        {
+          "source": "region",
+          "target": "region",
+          "source_type": "CHAR(4)",
+          "target_type": "STRING",
+          "rules": [
+            "rstrip_spaces"
+          ]
+        },
+        {
+          "source": "channel_group",
+          "target": "channel_group",
+          "source_type": "VARCHAR(6)",
+          "target_type": "STRING"
+        },
+        {
+          "source": "order_count",
+          "target": "order_count",
+          "source_type": "BIGINT",
+          "target_type": "BIGINT"
+        },
+        {
+          "source": "gross_revenue",
+          "target": "gross_revenue",
+          "source_type": "NUMERIC(38,2)",
+          "target_type": "DECIMAL(38,2)",
+          "rules": [
+            "decimal_round"
+          ]
+        },
+        {
+          "source": "avg_order_value",
+          "target": "avg_order_value",
+          "source_type": "NUMERIC(38,4)",
+          "target_type": "DECIMAL(38,4)",
+          "rules": [
+            "decimal_round"
+          ]
+        }
+      ]
+    }
+  ]
+}

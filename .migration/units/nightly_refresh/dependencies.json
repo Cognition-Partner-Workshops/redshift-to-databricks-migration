@@ -1,0 +1,28 @@
+{
+  "unit": "nightly_refresh",
+  "wave": 3,
+  "dialect": "redshift (plpgsql wrapper, hand-converted)",
+  "routines": [
+    {
+      "routine": "mart.sp_refresh_marts",
+      "kind": "plpgsql wrapper -> Lakeflow Job shell (logging only; stage DROP excluded by d-stage-exclusion)",
+      "reads": [],
+      "writes": [],
+      "calls": []
+    }
+  ],
+  "scheduler": {
+    "source": "customer scheduler (D5, product unknown: inventory G4) runs sql/etl in numeric order 10 -> 11",
+    "target": "Lakeflow Job tasks: 10_build_daily_revenue -> 11_build_customer_ltv, run_date parameter, schedule PAUSED until cutover",
+    "sequenced_routines": [
+      "sql/etl/10_build_daily_revenue.sql (owned by mart_daily_revenue)",
+      "sql/etl/11_build_customer_ltv.sql (owned by mart_customer_ltv)"
+    ]
+  },
+  "consumers": [],
+  "crossings": [
+    "D1 ordering: after waves 1 and 2 (sequences their merged routines)",
+    "D5 scheduler: owner and definition unknown (G4) -> plan blocker for cutover, not for this wave",
+    "D2: no write_targets of its own; the marts stay owned by waves 1 and 2 (fan-out cross-wave collision rule)"
+  ]
+}
