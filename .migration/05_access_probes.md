@@ -80,3 +80,20 @@ Finding 3 (guard vs. doctor) is resolved by 0.5.1. Findings 1 (UC grants, `b-uc-
 Redshift Data API; probes 4–5 not re-run) stand. `g-doctor` now turns on the grants alone: once the SP holds
 `USE CATALOG` on `migration_demo` and `redshift_src` plus the schema privileges in finding 1, the same doctor
 command and probes 6–9 re-run should sign `ready: true`.
+
+## Access check after UC grants (manager request, 2026-10-02 14:02 UTC)
+
+Plugin 0.5.1; identity for every probe: service principal `d9d1c4ec-29da-4ec7-9aa0-e932710d61e2`, `oauth-m2m`,
+warehouse `565cd2fd713738c4`. No other identity, no `sql/etl/*` executed, probe tables dropped afterwards.
+
+| # | Probe | Result | Evidence |
+|---|---|---|---|
+| 11 | factory-doctor, `--role setup`, `--expect-identity d9d1c4ec-…`, `--expect-catalogs migration_demo`, `--analytical-schema migration_demo.core`, hook probe | **WORKS — `ready: true`** | 10 ok, 5 skipped (setup posture, no unit mappings), 0 warn, 0 fail. Hook probe BLOCKED by the live hook → `hook_guard=ok`; `databricks_identity=ok`; `analytical_target_grants=ok` ("principal d9d1c4ec-… can create and write tables in migration_demo.core"); `recon_harness=ok` (`databricks-sql-connector` 4.5.0 installed in the session venv; adapters `databricks`, `oracle`, `sqlserver`). Record committed as `09_capabilities.json`; `.hook_probe_nonce` gitignored. |
+| 6 | Federated read `SELECT count(*) FROM redshift_src.core.orders` | WORKS | `n = 65597` |
+| 7 | Federated read `SELECT count(*) FROM redshift_src.mart.daily_revenue` | WORKS | `n = 2997` |
+| 8 | `CREATE TABLE migration_demo.core._probe_ws13 (ok INT)` | WORKS | created; `DROP TABLE IF EXISTS` succeeded; `SHOW TABLES … LIKE '_probe_ws13'` empty |
+| 9 | `CREATE TABLE migration_demo.mart._probe_ws13 (ok INT)` | WORKS | created and dropped the same way |
+
+Findings 1 (UC grants) and 3 (guard vs. doctor) are closed. Finding 2 stands: the direct Redshift Data API read
+(probes 4–5) remains a guard finding; federation (probes 6–7) is the proven legacy read path. Gate `g-doctor` is
+satisfiable on merge of this PR: the doctor signs `ready: true` for the expected identity and catalog.

@@ -1,7 +1,5 @@
 {
-  "blocking": [
-    "analytical_target_grants=fail"
-  ],
+  "blocking": [],
   "checks": [
     {
       "data": {},
@@ -75,7 +73,7 @@
     },
     {
       "data": {
-        "probe_nonce": "3697b3b0",
+        "probe_nonce": "ef2a2626",
         "sub_results": [
           {
             "data": {},
@@ -85,13 +83,13 @@
           },
           {
             "data": {},
-            "detail": "dbx_guard.py blocks the probe command when invoked directly and names __dbx_guard_probe__3697b3b0",
+            "detail": "dbx_guard.py blocks the probe command when invoked directly and names __dbx_guard_probe__ef2a2626",
             "id": "hook_guard_functional",
             "status": "ok"
           },
           {
             "data": {
-              "probe_nonce": "3697b3b0"
+              "probe_nonce": "ef2a2626"
             },
             "detail": "live probe was BLOCKED: the platform is running hooks.json",
             "id": "hook_platform_loaded",
@@ -99,7 +97,7 @@
           }
         ]
       },
-      "detail": "hooks_files: hooks.json registers dbx_guard.py (PreToolUse); hook_guard_functional: dbx_guard.py blocks the probe command when invoked directly and names __dbx_guard_probe__3697b3b0; hook_platform_loaded: live probe was BLOCKED: the platform is running hooks.json",
+      "detail": "hooks_files: hooks.json registers dbx_guard.py (PreToolUse); hook_guard_functional: dbx_guard.py blocks the probe command when invoked directly and names __dbx_guard_probe__ef2a2626; hook_platform_loaded: live probe was BLOCKED: the platform is running hooks.json",
       "id": "hook_guard",
       "reusable": false,
       "status": "ok"
@@ -125,7 +123,7 @@
     {
       "data": {
         "drivers": {
-          "databricks": false,
+          "databricks": true,
           "oracle": true,
           "postgres": false,
           "sqlserver": true
@@ -140,22 +138,22 @@
           {
             "data": {
               "drivers": {
-                "databricks": false,
+                "databricks": true,
                 "oracle": true,
                 "postgres": false,
                 "sqlserver": true
               }
             },
-            "detail": "installed adapters: ['oracle', 'sqlserver']; databricks-sql-connector missing, live/snapshot recon cannot run",
+            "detail": "installed adapters: ['databricks', 'oracle', 'sqlserver']",
             "id": "recon_drivers",
-            "status": "warn"
+            "status": "ok"
           }
         ]
       },
-      "detail": "recon_harness: dbx-recon selftest PASS: 9 canonicalization rules exercised via python -m recon.cli (cwd /opt/.devin/plugins/cache/github.com_Cognition-Partner-Workshops_dbx-migration-plugin-5890f19a/0.5.1/skills/data-reconciliation/harness); recon_drivers: installed adapters: ['oracle', 'sqlserver']; databricks-sql-connector missing, live/snapshot recon cannot run",
+      "detail": "recon_harness: dbx-recon selftest PASS: 9 canonicalization rules exercised via python -m recon.cli (cwd /opt/.devin/plugins/cache/github.com_Cognition-Partner-Workshops_dbx-migration-plugin-5890f19a/0.5.1/skills/data-reconciliation/harness); recon_drivers: installed adapters: ['databricks', 'oracle', 'sqlserver']",
       "id": "recon_harness",
       "reusable": false,
-      "status": "warn"
+      "status": "ok"
     },
     {
       "data": {
@@ -264,35 +262,33 @@
     },
     {
       "data": {
-        "catalog_owner": null,
+        "catalog_owner": "dhrov.subramanian@cognition.ai",
         "exists": true,
         "missing": [],
-        "owner": null,
+        "owner": "dhrov.subramanian@cognition.ai",
         "principal": "d9d1c4ec-29da-4ec7-9aa0-e932710d61e2",
         "schema": "migration_demo.core"
       },
-      "detail": "Error: User does not have USE CATALOG on Catalog 'migration_demo'. Host: https://dbc-8bc9474f-40ae.cloud.databricks.com Auth type: OAuth Machine-to-Machine (oauth-m2m) Next steps: - Verify you have the required permissions for this operation - Check your identity: databricks auth describe - Consider setting up a profile: databricks auth login --profile <name>",
+      "detail": "principal d9d1c4ec-29da-4ec7-9aa0-e932710d61e2 can create and write tables in migration_demo.core (owner dhrov.subramanian@cognition.ai)",
       "id": "analytical_target_grants",
       "reusable": false,
-      "status": "fail"
+      "status": "ok"
     }
   ],
-  "generated_at": "2026-10-02T04:31:26Z",
+  "generated_at": "2026-10-02T14:02:15Z",
   "identity": {
     "host": "https://dbc-8bc9474f-40ae.cloud.databricks.com",
     "service_principal": true,
     "userName": "d9d1c4ec-29da-4ec7-9aa0-e932710d61e2"
   },
   "plugin_root": "/opt/.devin/plugins/cache/github.com_Cognition-Partner-Workshops_dbx-migration-plugin-5890f19a/0.5.1",
-  "ready": false,
+  "ready": true,
   "reused_doctor": null,
   "role": "setup",
   "schema": "dbx-migration-factory/capabilities/1",
   "summary": {
-    "fail": 1,
-    "ok": 8,
-    "skipped": 5,
-    "warn": 1
+    "ok": 10,
+    "skipped": 5
   },
   "workspace": "/home/ubuntu/repos/redshift-to-databricks-migration"
 }
