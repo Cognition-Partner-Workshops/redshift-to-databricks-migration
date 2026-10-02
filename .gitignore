@@ -1,1 +1,4 @@
 __pycache__/
+
+# dbx-migration-factory hook probe nonce (never committed)
+.migration/.hook_probe_nonce

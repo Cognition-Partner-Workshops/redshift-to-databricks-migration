@@ -1,0 +1,39 @@
+{
+  "version": "tol-redshift-orders-v1",
+  "decision": "recon-tolerances",
+  "plan_revision": 24,
+  "derived_from": [
+    "skills/data-reconciliation/harness/examples/tolerances.example.json",
+    "skills/data-reconciliation/harness/examples/canonicalization.redshift.json"
+  ],
+  "full_diff_row_threshold": 100000,
+  "sample_size": 1000,
+  "numeric_abs_tol": 0.005,
+  "aggregate_rel_tol": 0.0,
+  "source_concurrency": 1,
+  "source_concurrency_reason": "Redshift Serverless workgroup demo-wg is shared; every federated query counts against this cap",
+  "mode": "live",
+  "source_access": {
+    "path": "lakehouse-federation",
+    "foreign_catalog": "redshift_src",
+    "harness_family": "databricks",
+    "degraded_fallback": "snapshot from customer exports (--mode snapshot) only under a new plan decision"
+  },
+  "canonicalization": "skills/data-reconciliation/harness/examples/canonicalization.redshift.json",
+  "per_type": {
+    "DECIMAL": {"rule": "decimal_round", "numeric_abs_tol": 0.005, "note": "order_total DECIMAL(12,2), unit_price DECIMAL(10,2), discount_pct DECIMAL(5,4)"},
+    "CHAR": {"rule": "rstrip_spaces", "note": "CHAR(10) order_status and CHAR(4) region are blank-padded on Redshift; 'CANCELLED  ' compares after rstrip"},
+    "TIMESTAMP": {"rule": "datetime_utc_truncate_ms"},
+    "VARCHAR": {"rule": "empty_string_is_null", "policy": "SET_AT_STOP_A"}
+  },
+  "per_surface": {
+    "core": {"comparison": "exact after canonicalization", "populations": "all rows"},
+    "mart": {"comparison": "aggregate_rel_tol 0.0, numeric_abs_tol 0.005 on revenue/aov", "populations": "all rows; daily_revenue excludes the current day per sql/etl/10_build_daily_revenue.sql"}
+  },
+  "nondeterminism": {
+    "GETDATE_cutoff": "mart.daily_revenue filters order_ts < TRUNC(GETDATE()); recon compares both sides for the same as-of date",
+    "AVG_of_averages": "sql/reports/20_region_topline.sql averages avg_order_value; graded as an aggregate under aggregate_rel_tol"
+  },
+  "amendments": [],
+  "amendment_procedure": "Only a new `important` plan decision selected by the human may change a value. An amendment appends a row to `amendments` ({decision, changed, from, to, re_verification_scope}); the old value is never edited in place and the row names the units that must be re-verified."
+}
