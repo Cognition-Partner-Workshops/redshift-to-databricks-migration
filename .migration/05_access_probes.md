@@ -61,3 +61,22 @@ service principal `d9d1c4ec-…`; it needs the grants listed under "Findings for
 (`USE CATALOG` on `migration_demo` and `redshift_src`, schema-level `SELECT` on `redshift_src.core|mart`,
 `CREATE TABLE`/`MODIFY` on `migration_demo.core|mart`). If the intake intends a different service
 principal as the migration identity, that is a plan decision and a blueprint change, not a probe.
+
+## Re-run under dbx-migration-factory 0.5.1 (manager follow-up, 2026-10-02)
+
+Loaded plugin root `…/dbx-migration-plugin-5890f19a/0.5.1`, `.devin-plugin/plugin.json` version `0.5.1`,
+`_runs_plugin_doctor` present in `hooks/dbx_guard.py`. Hook and plugin untouched. Identity for every
+probe below: service principal `d9d1c4ec-29da-4ec7-9aa0-e932710d61e2`, `oauth-m2m`; no other identity used.
+
+| # | Probe | Result | Evidence |
+|---|---|---|---|
+| 11 | factory-doctor, `--role setup`, `--expect-identity d9d1c4ec-…`, `--expect-catalogs migration_demo`, `--analytical-schema migration_demo.core`, with hook probe | RAN, `ready=False` | guard 0.5.1 lets the doctor run. The doctor's hook-probe command was BLOCKED by the live hook (block message named the doctor's nonce); re-run with `--hook-probe-result blocked:<nonce>` → `hook_guard=ok`, `databricks_identity=ok` (oauth-m2m, SP `d9d1c4ec-…`, warehouse `565cd2fd713738c4`), `workspace` / `allowed_targets` / `allowlist_committed` / `authorizations_file` / `official_databricks_plugin` / `recon_family_supported` = ok, `recon_harness=warn` (`databricks-sql-connector` missing on this box), 5 rows skipped (no unit mappings at setup). Blocking: `analytical_target_grants=fail` — `User does not have USE CATALOG on Catalog 'migration_demo'`. Record committed as `09_capabilities.json` (`ready: false`, not fabricated); `.hook_probe_nonce` written and gitignored. |
+| 6 | Federated read `redshift_src.core.orders` | BLOCKED | `[INSUFFICIENT_PERMISSIONS] User does not have USE CATALOG on Catalog 'redshift_src'. SQLSTATE: 42501` |
+| 7 | Federated read `redshift_src.mart.daily_revenue` | BLOCKED | same error on `redshift_src` |
+| 8 | `CREATE TABLE migration_demo.core._probe_ws13 (ok INT)` | BLOCKED | `[INSUFFICIENT_PERMISSIONS] User does not have USE CATALOG on Catalog 'migration_demo'. SQLSTATE: 42501` |
+| 9 | `CREATE TABLE migration_demo.mart._probe_ws13 (ok INT)` | BLOCKED | same error on `migration_demo` |
+
+Finding 3 (guard vs. doctor) is resolved by 0.5.1. Findings 1 (UC grants, `b-uc-grants`) and 2 (guard vs.
+Redshift Data API; probes 4–5 not re-run) stand. `g-doctor` now turns on the grants alone: once the SP holds
+`USE CATALOG` on `migration_demo` and `redshift_src` plus the schema privileges in finding 1, the same doctor
+command and probes 6–9 re-run should sign `ready: true`.
